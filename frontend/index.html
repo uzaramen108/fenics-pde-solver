@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEniCSx PDE Solver</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1>FEniCSx PDE Solver</h1>
+            <p>편미분 방정식 수치 해석 및 시각화 플랫폼</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- 입력 패널 -->
+            <div class="panel input-panel">
+                <h2>
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    문제 설정
+                </h2>
+
+                <div class="form-group">
+                    <label for="equation">경계 조건 u(x, y)</label>
+                    <input 
+                        type="text" 
+                        id="equation" 
+                        value="1 + x[0]**2 + 2*x[1]**2"
+                        placeholder="예: 1 + x[0]**2 + 2*x[1]**2"
+                    >
+                    <small>Python 문법 사용 (x[0]: x좌표, x[1]: y좌표)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="source">소스 함수 f</label>
+                    <input 
+                        type="text" 
+                        id="source" 
+                        value="-6"
+                        placeholder="예: -6"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="mesh">메시 크기: <span id="meshValue">8</span> × <span id="meshValue2">8</span></label>
+                    <input 
+                        type="range" 
+                        id="mesh" 
+                        min="4" 
+                        max="32" 
+                        step="2" 
+                        value="8"
+                        class="slider"
+                    >
+                </div>
+
+                <button id="solveBtn" class="btn-primary">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    PDE 풀이 시작
+                </button>
+
+                <div class="info-box">
+                    <h3>풀이할 방정식:</h3>
+                    <div class="equation-display">
+                        <div>-∇²u = f in Ω</div>
+                        <div id="boundaryEq">u = 1 + x[0]**2 + 2*x[1]**2 on ∂Ω</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 결과 패널 -->
+            <div class="panel result-panel">
+                <h2>계산 결과</h2>
+
+                <div id="errorAlert" class="alert alert-error" style="display: none;">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span id="errorMessage"></span>
+                </div>
+
+                <div id="resultsContainer" style="display: none;">
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <div class="result-label">L2 오차</div>
+                            <div class="result-value" id="errorL2">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">최대 오차</div>
+                            <div class="result-value" id="errorMax">-</div>
+                        </div>
+                    </div>
+
+                    <div class="result-card full-width">
+                        <div class="result-label">계산 시간</div>
+                        <div class="result-value-lg" id="compTime">-</div>
+                    </div>
+
+                    <div class="result-card full-width">
+                        <div class="result-label">생성된 파일</div>
+                        <div class="file-list">
+                            <div class="file-item" id="xdmfFile">📄 results/fundamentals.xdmf</div>
+                            <div class="file-item" id="h5File">📄 results/fundamentals.h5</div>
+                        </div>
+                    </div>
+
+                    <button class="btn-success" id="downloadBtn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        ParaView 파일 다운로드
+                    </button>
+
+                    <div class="alert alert-info">
+                        <strong>ParaView로 시각화:</strong>
+                        <ol>
+                            <li>ParaView 실행</li>
+                            <li>File → Open → fundamentals.xdmf</li>
+                            <li>'Apply' 클릭하여 데이터 로드</li>
+                            <li>'u' 변수를 선택하여 솔루션 시각화</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <p>PDE를 풀면 결과가 여기에 표시됩니다</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 생성된 코드 -->
+        <div class="panel code-panel">
+            <h2>생성된 Python 코드</h2>
+            <pre id="pythonCode"><code>from mpi4py import MPI
+from dolfinx import mesh, fem, default_scalar_type
+from dolfinx.fem.petsc import LinearProblem
+import numpy
+import ufl
+from dolfinx import io
+from pathlib import Path
+
+# 메시 생성
+domain = mesh.create_unit_square(MPI.COMM_WORLD, 8, 8, mesh.CellType.quadrilateral)
+V = fem.functionspace(domain, ("Lagrange", 1))
+
+# 경계 조건 설정
+uD = fem.Function(V)
+uD.interpolate(lambda x: 1 + x[0]**2 + 2*x[1]**2)
+
+tdim = domain.topology.dim
+fdim = tdim - 1
+domain.topology.create_connectivity(fdim, tdim)
+boundary_facets = mesh.exterior_facet_indices(domain.topology)
+boundary_dofs = fem.locate_dofs_topological(V, fdim, boundary_facets)
+bc = fem.dirichletbc(uD, boundary_dofs)
+
+# 약형식 정의
+u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
+f = fem.Constant(domain, default_scalar_type(-6))
+
+a = ufl.dot(ufl.grad(u), ufl.grad(v)) * ufl.dx
+L = f * v * ufl.dx
+
+# 문제 풀이
+problem = LinearProblem(
+    a, L, bcs=[bc],
+    petsc_options={"ksp_type": "preonly", "pc_type": "lu"}
+)
+uh = problem.solve()
+
+# 오차 계산
+V2 = fem.functionspace(domain, ("Lagrange", 2))
+uex = fem.Function(V2, name="u_exact")
+uex.interpolate(lambda x: 1 + x[0]**2 + 2*x[1]**2)
+
+L2_error = fem.form(ufl.inner(uh - uex, uh - uex) * ufl.dx)
+error_local = fem.assemble_scalar(L2_error)
+error_L2 = numpy.sqrt(domain.comm.allreduce(error_local, op=MPI.SUM))
+error_max = numpy.max(numpy.abs(uD.x.array - uh.x.array))
+
+# 결과 저장
+results_folder = Path("results")
+results_folder.mkdir(exist_ok=True, parents=True)
+filename = results_folder / "fundamentals"
+
+with io.XDMFFile(domain.comm, filename.with_suffix(".xdmf"), "w") as xdmf:
+    xdmf.write_mesh(domain)
+    xdmf.write_function(uh)
+
+print(f"Error_L2: {error_L2:.2e}")
+print(f"Error_max: {error_max:.2e}")</code></pre>
+        </div>
+    </div>
+
+    <script src="ui.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
