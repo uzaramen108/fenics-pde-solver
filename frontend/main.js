@@ -1,28 +1,7 @@
 // main.js - 디버깅 코드 추가
 
-function getApiBaseUrl() {
-    const hostname = window.location.hostname;
-    const port = window.location.port;
-    
-    // 로컬 개발 환경
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        // Live Server
-        if (port.startsWith('55')) {
-            return 'http://localhost:8000';
-        }
-        // Nginx
-        return window.location.origin;
-    }
-    
-    // 프로덕션 환경 (GitHub Pages)
-    return 'https://fenics-backend.onrender.com';  // ← Render에서 받은 URL
-}
-
-const API_BASE_URL = getApiBaseUrl();
-console.log('🔧 [DEBUG] API Base URL:', API_BASE_URL);
-
 // API 엔드포인트 설정
-// const API_BASE_URL = window.location.origin; // 로컬 개발용
+const API_BASE_URL = window.location.origin;
 
 console.log('🔧 [DEBUG] API Base URL:', API_BASE_URL);
 
