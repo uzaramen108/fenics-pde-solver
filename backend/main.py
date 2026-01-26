@@ -10,6 +10,7 @@ import time
 import zipfile
 from pathlib import Path
 import logging
+import os
 
 # 로깅 설정
 logging.basicConfig(
