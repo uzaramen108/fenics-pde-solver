@@ -1,0 +1,38 @@
+services:
+  backend:
+    build: ./backend
+    container_name: fenics-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./results:/app/results
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - fenics-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    image: nginx:alpine
+    container_name: fenics-frontend
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - fenics-net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  fenics-net:
+    driver: bridge
