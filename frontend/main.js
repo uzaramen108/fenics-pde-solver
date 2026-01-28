@@ -13,7 +13,7 @@ function getApiBaseUrl() {
     }
     
     // GitHub Pages (프로덕션)
-    return 'https://YOUR_USERNAME-fenics-backend.hf.space';  // Hugging Face URL
+    return 'https://uzaramen108-fenics-backend.hf.space';  // Hugging Face URL
 }
 
 const API_BASE_URL = getApiBaseUrl();
