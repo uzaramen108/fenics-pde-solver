@@ -1,4 +1,4 @@
-# main.py - FastAPI 백엔드 서버 (디버깅 버전)
+# app.py - Hugging Face Spaces용 FastAPI 서버
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,12 +19,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="FEniCSx PDE Solver API")
+app = FastAPI(
+    title="FEniCSx PDE Solver API",
+    description="Solve partial differential equations using FEniCSx",
+    version="1.0.0"
+)
 
-# CORS 설정 (프론트엔드와 통신하기 위해 필수)
+# CORS 설정 (모든 origin 허용)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Hugging Face Spaces는 보통 이렇게 설정
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,13 +50,20 @@ class PDEResponse(BaseModel):
 async def root():
     logger.info("Root endpoint called")
     return {
-        "message": "FEniCSx PDE Solver API",
+        "message": "FEniCSx PDE Solver API - Running on Hugging Face Spaces",
         "version": "1.0.0",
         "endpoints": {
             "solve": "POST /api/solve",
-            "download": "GET /api/download"
-        }
+            "download": "GET /api/download",
+            "health": "GET /health"
+        },
+        "status": "healthy"
     }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Hugging Face Spaces"""
+    return {"status": "healthy", "service": "fenics-backend"}
 
 @app.post("/api/solve", response_model=PDEResponse)
 async def solve_pde(request: PDERequest):
@@ -79,7 +90,7 @@ async def solve_pde(request: PDERequest):
             input=json.dumps(input_data),
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,  # Hugging Face는 시간 여유 더 줌
             cwd=Path(__file__).parent
         )
         
@@ -122,7 +133,7 @@ async def solve_pde(request: PDERequest):
         
     except subprocess.TimeoutExpired:
         logger.error("❌ Solver timeout")
-        raise HTTPException(status_code=504, detail="계산 시간 초과 (60초)")
+        raise HTTPException(status_code=504, detail="계산 시간 초과 (120초)")
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -172,13 +183,8 @@ async def global_exception_handler(request, exc):
         content={"detail": str(exc)}
     )
 
-#if __name__ == "__main__":
-#    import uvicorn
-#    logger.info("🚀 Starting FastAPI server...")
-#    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")
-
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 7860))
     logger.info(f"🚀 Starting FastAPI server on port {port}...")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="debug")

@@ -6,16 +6,14 @@ function getApiBaseUrl() {
     
     // 로컬 개발 환경
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        // Live Server
         if (port.startsWith('55')) {
             return 'http://localhost:8000';
         }
-        // Nginx
         return window.location.origin;
     }
     
-    // 프로덕션 환경 (GitHub Pages)
-    return 'https://fenics-backend.onrender.com';  // ← Render에서 받은 URL
+    // GitHub Pages (프로덕션)
+    return 'https://YOUR_USERNAME-fenics-backend.hf.space';  // Hugging Face URL
 }
 
 const API_BASE_URL = getApiBaseUrl();

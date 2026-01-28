@@ -8,25 +8,18 @@ venv/
 env/
 ENV/
 
-# Docker
-*.log
-
 # Results
-results/
-*.xdmf
-*.h5
+results/*.xdmf
+results/*.h5
 *.zip
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Environment variables
+# Environment
 .env
-.env.local

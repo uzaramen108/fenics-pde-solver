@@ -1,10 +1,12 @@
-venv/
 __pycache__/
 *.pyc
 .git/
 .gitignore
 README.md
-docker-compose.yml
-results/
-*.xdmf
-*.h5
+results/*.xdmf
+results/*.h5
+*.zip
+venv/
+env/
+.vscode/
+.idea/
