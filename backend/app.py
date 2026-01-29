@@ -1,4 +1,4 @@
-# app.py - Hugging Face Spaces용 FastAPI 서버
+# app.py - FEniCSx v0.10.0 코드 실행 백엔드
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +11,9 @@ import zipfile
 from pathlib import Path
 import logging
 import os
+import tempfile
+import uuid
+import shutil
 
 # 로깅 설정
 logging.basicConfig(
@@ -20,41 +23,41 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="FEniCSx PDE Solver API",
-    description="Solve partial differential equations using FEniCSx",
-    version="1.0.0"
+    title="FEniCSx Dynamic Code Executor",
+    description="Execute user-generated FEniCSx Python code",
+    version="2.0.0"
 )
 
-# CORS 설정 (모든 origin 허용)
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Hugging Face Spaces는 보통 이렇게 설정
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class PDERequest(BaseModel):
-    boundary_condition: str
-    source_function: str
-    mesh_size: int
+class CodeExecutionRequest(BaseModel):
+    python_code: str
+    execution_id: str = None
 
-class PDEResponse(BaseModel):
-    error_L2: str
-    error_max: str
-    xdmf_file: str
-    h5_file: str
-    computation_time: str
+class CodeExecutionResponse(BaseModel):
+    execution_id: str
+    status: str
+    result: dict
+    stdout: str
+    stderr: str
+    execution_time: str
 
 @app.get("/")
 async def root():
-    logger.info("Root endpoint called")
     return {
-        "message": "FEniCSx PDE Solver API - Running on Hugging Face Spaces",
-        "version": "1.0.0",
+        "message": "FEniCSx Dynamic Code Executor",
+        "version": "2.0.0",
+        "fenics_version": "0.10.0",
         "endpoints": {
-            "solve": "POST /api/solve",
-            "download": "GET /api/download",
+            "execute": "POST /api/execute",
+            "download": "GET /api/download/{execution_id}",
             "health": "GET /health"
         },
         "status": "healthy"
@@ -62,119 +65,184 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for Hugging Face Spaces"""
-    return {"status": "healthy", "service": "fenics-backend"}
+    return {"status": "healthy", "service": "fenics-executor"}
 
-@app.post("/api/solve", response_model=PDEResponse)
-async def solve_pde(request: PDERequest):
+@app.post("/api/execute", response_model=CodeExecutionResponse)
+async def execute_code(request: CodeExecutionRequest):
     """
-    FEniCSx를 사용하여 PDE를 풀고 결과를 반환합니다.
+    프론트엔드에서 생성한 FEniCSx Python 코드를 실행합니다.
     """
-    logger.info(f"🚀 Received solve request: {request}")
+    execution_id = request.execution_id or str(uuid.uuid4())[:8]
+    logger.info(f"🚀 Executing code for ID: {execution_id}")
+    logger.info(f"📝 Code length: {len(request.python_code)} characters")
     
     try:
         start_time = time.time()
         
-        input_data = {
-            "boundary_condition": request.boundary_condition,
-            "source_function": request.source_function,
-            "mesh_size": request.mesh_size
-        }
+        # 임시 작업 디렉토리 생성
+        work_dir = Path(f"/tmp/fenics_{execution_id}")
+        work_dir.mkdir(exist_ok=True, parents=True)
         
-        logger.debug(f"📤 Input data: {input_data}")
+        results_dir = work_dir / "results"
+        results_dir.mkdir(exist_ok=True)
         
-        # solver.py 호출
-        logger.info("Calling solver.py...")
+        logger.debug(f"📁 Work directory: {work_dir}")
+        logger.debug(f"📁 Results directory: {results_dir}")
+        
+        # Python 코드 파일로 저장
+        code_file = work_dir / "user_code.py"
+        
+        # 코드에 결과 경로 자동 주입 (만약 없다면)
+        modified_code = request.python_code
+        if 'results_folder = Path("results")' in modified_code:
+            modified_code = modified_code.replace(
+                'results_folder = Path("results")',
+                f'results_folder = Path("{results_dir}")'
+            )
+        
+        code_file.write_text(modified_code, encoding='utf-8')
+        logger.debug(f"✅ Code written to: {code_file}")
+        
+        # 간단한 보안 검사
+        dangerous_patterns = ['subprocess', 'os.system', '__import__', 'open(']
+        code_lower = request.python_code.lower()
+        
+        # eval과 exec는 FEniCS에서 필요할 수 있으므로 허용
+        for pattern in dangerous_patterns:
+            if pattern in code_lower and pattern not in ['open(']:
+                logger.warning(f"⚠️ Potentially dangerous pattern found: {pattern}")
+                # 경고만 하고 계속 진행 (필요시 차단)
+        
+        # 코드 실행
+        logger.info("▶️ Executing user-generated code...")
+        
         result = subprocess.run(
-            ["python3", "solver.py"],
-            input=json.dumps(input_data),
+            ["python3", str(code_file)],
             capture_output=True,
             text=True,
-            timeout=120,  # Hugging Face는 시간 여유 더 줌
-            cwd=Path(__file__).parent
+            timeout=180,  # 3분 타임아웃
+            cwd=work_dir,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"}
         )
         
-        logger.debug(f"📥 Solver return code: {result.returncode}")
-        logger.debug(f"📥 Solver stdout: {result.stdout}")
-        logger.debug(f"📥 Solver stderr: {result.stderr}")
+        logger.debug(f"📥 Return code: {result.returncode}")
+        logger.debug(f"📥 Stdout: {result.stdout[:500]}...")
+        logger.debug(f"📥 Stderr: {result.stderr[:500]}...")
         
+        # 실행 실패
         if result.returncode != 0:
-            logger.error(f"❌ Solver failed: {result.stderr}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"계산 오류: {result.stderr}"
+            logger.error(f"❌ Execution failed with code {result.returncode}")
+            return CodeExecutionResponse(
+                execution_id=execution_id,
+                status="error",
+                result={"error": "Execution failed"},
+                stdout=result.stdout[-2000:],  # 마지막 2000자
+                stderr=result.stderr[-2000:],
+                execution_time=f"{time.time() - start_time:.3f}s"
             )
         
-        # 결과 파싱
+        # stdout에서 JSON 결과 파싱
+        result_data = {}
         try:
-            output_data = json.loads(result.stdout)
-            logger.info(f"✅ Parsed output: {output_data}")
+            # 마지막 줄에서 JSON 찾기
+            lines = result.stdout.strip().split('\n')
+            for line in reversed(lines):
+                line = line.strip()
+                if line.startswith('{') and line.endswith('}'):
+                    result_data = json.loads(line)
+                    break
         except json.JSONDecodeError as e:
-            logger.error(f"❌ JSON parse error: {e}")
-            logger.error(f"Raw output: {result.stdout}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"솔버 출력 파싱 오류: {result.stdout[:200]}"
-            )
+            logger.warning(f"⚠️ Could not parse JSON from output: {e}")
+            result_data = {"raw_output": result.stdout[-500:]}
+        
+        # 생성된 파일 목록
+        generated_files = []
+        if results_dir.exists():
+            generated_files = [f.name for f in results_dir.iterdir() if f.is_file()]
+        
+        result_data["generated_files"] = generated_files
+        result_data["execution_id"] = execution_id
         
         computation_time = time.time() - start_time
-        logger.info(f"⏱️ Computation time: {computation_time:.3f}s")
+        logger.info(f"✅ Execution completed in {computation_time:.3f}s")
+        logger.info(f"📄 Generated files: {generated_files}")
         
-        response = PDEResponse(
-            error_L2=output_data["error_L2"],
-            error_max=output_data["error_max"],
-            xdmf_file=output_data["xdmf_file"],
-            h5_file=output_data["h5_file"],
-            computation_time=f"{computation_time:.3f}s"
+        return CodeExecutionResponse(
+            execution_id=execution_id,
+            status="success",
+            result=result_data,
+            stdout=result.stdout[-2000:],
+            stderr=result.stderr[-1000:],
+            execution_time=f"{computation_time:.3f}s"
         )
         
-        logger.info(f"✅ Sending response: {response}")
-        return response
-        
     except subprocess.TimeoutExpired:
-        logger.error("❌ Solver timeout")
-        raise HTTPException(status_code=504, detail="계산 시간 초과 (120초)")
+        logger.error(f"❌ Timeout after 180 seconds")
+        return CodeExecutionResponse(
+            execution_id=execution_id,
+            status="timeout",
+            result={"error": "Execution timeout"},
+            stdout="",
+            stderr="Execution exceeded 180 seconds",
+            execution_time="180s+"
+        )
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        return CodeExecutionResponse(
+            execution_id=execution_id,
+            status="error",
+            result={"error": str(e)},
+            stdout="",
+            stderr=str(e),
+            execution_time=f"{time.time() - start_time:.3f}s"
+        )
+    finally:
+        # 5분 후 자동 정리 (선택사항)
+        # import threading
+        # threading.Timer(300, lambda: shutil.rmtree(work_dir, ignore_errors=True)).start()
+        pass
 
-@app.get("/api/download")
-async def download_results():
+@app.get("/api/download/{execution_id}")
+async def download_results(execution_id: str):
     """
-    계산 결과 파일들을 ZIP으로 압축하여 다운로드합니다.
+    실행 결과 파일들을 ZIP으로 다운로드합니다.
     """
-    logger.info("📥 Download request received")
+    logger.info(f"📥 Download request for execution ID: {execution_id}")
     
     try:
-        results_folder = Path(__file__).parent / "results"
-        logger.debug(f"Results folder: {results_folder}")
+        results_dir = Path(f"/tmp/fenics_{execution_id}/results")
         
-        if not results_folder.exists():
-            logger.error("❌ Results folder not found")
-            raise HTTPException(status_code=404, detail="결과 파일이 없습니다.")
+        if not results_dir.exists():
+            logger.error(f"❌ Results directory not found: {results_dir}")
+            raise HTTPException(status_code=404, detail="결과 파일을 찾을 수 없습니다.")
+        
+        files = list(results_dir.glob("*"))
+        if not files:
+            raise HTTPException(status_code=404, detail="다운로드할 파일이 없습니다.")
         
         # ZIP 파일 생성
-        zip_path = Path(__file__).parent / "results.zip"
-        logger.info(f"Creating ZIP: {zip_path}")
+        zip_path = Path(f"/tmp/results_{execution_id}.zip")
         
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for file in results_folder.glob("*"):
+            for file in files:
                 if file.is_file():
-                    logger.debug(f"Adding to ZIP: {file.name}")
                     zipf.write(file, file.name)
+                    logger.debug(f"📦 Added to ZIP: {file.name}")
         
-        logger.info("✅ ZIP created successfully")
+        logger.info(f"✅ ZIP created: {zip_path}")
+        
         return FileResponse(
             zip_path,
             media_type='application/zip',
-            filename='fundamentals.zip'
+            filename=f'fenics_results_{execution_id}.zip'
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ Download error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-# 에러 핸들러
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     logger.error(f"❌ Global exception: {exc}", exc_info=True)
@@ -186,5 +254,5 @@ async def global_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 7860))
-    logger.info(f"🚀 Starting FastAPI server on port {port}...")
+    logger.info(f"🚀 Starting FEniCSx Code Executor on port {port}...")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="debug")

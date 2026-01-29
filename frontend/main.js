@@ -17,7 +17,6 @@ function getApiBaseUrl() {
 }
 
 const API_BASE_URL = getApiBaseUrl();
-console.log('🔧 [DEBUG] API Base URL:', API_BASE_URL);
 
 // API 엔드포인트 설정
 // const API_BASE_URL = window.location.origin; // 로컬 개발용
