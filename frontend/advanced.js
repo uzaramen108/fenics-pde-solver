@@ -52,7 +52,7 @@ const ui = {
 
 // 차원 변경 시
 ui.dimension.addEventListener('change', function() {
-    const dim = this.value;
+    const dim = ui.dimension.value;
     
     // 메시 형태 옵션 변경
     if (dim === '1d') {
