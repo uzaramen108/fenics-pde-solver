@@ -16,6 +16,7 @@ const ui = {
     meshNzGroup: $('meshNzGroup'),
     meshShape: $('meshShape'),
     meshShapeGroup: $('meshShapeGroup'),
+    meshLc: $('meshLc'),
     elementType: $('elementType'),
     degree: $('degree'),
     boundaryExpression: $('boundaryExpression'),
