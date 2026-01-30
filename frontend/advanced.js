@@ -54,27 +54,25 @@ const ui = {
 ui.dimension.addEventListener('change', function() {
     const dim = this.value;
     
-    ui.meshNyGroup.style.display = dim === '1d' ? 'none' : 'block';
-    ui.meshNzGroup.style.display = dim === '3d' ? 'block' : 'none';
-    
     // 메시 형태 옵션 변경
     if (dim === '1d') {
         ui.meshShapeGroup.style.display = 'none';
     } else if (dim === '2d') {
         ui.meshShapeGroup.style.display = 'block';
         ui.meshShape.innerHTML = `
-            <option value="rectangle">Rectangle (Quad)</option>
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="lshape">L-Shape</option>
             <option value="triangle">Triangle</option>
         `;
     } else if (dim === '3d') {
         ui.meshShapeGroup.style.display = 'block';
         ui.meshShape.innerHTML = `
-            <option value="box">Box (Hex)</option>
-            <option value="tetrahedron">Tetrahedron</option>
+            <option value="box">Box</option>
+            <option value="sphere">Sphere</option>
         `;
     }
     
-    // 경계 조건 예제 업데이트
     updateBoundaryExample(dim);
 });
 
@@ -114,17 +112,16 @@ function collectConfig() {
     const config = {
         dimension: dim,
         mesh: {
-            nx: parseInt(ui.meshNx.value),
-            ny: parseInt(ui.meshNy.value),
-            nz: parseInt(ui.meshNz.value),
-            shape: ui.meshShape.value
+            shape: ui.meshShape.value,
+            lc: parseFloat(ui.meshLc.value || 0.1)
         },
         functionSpace: {
             type: ui.elementType.value,
             degree: parseInt(ui.degree.value)
         },
         boundaryCondition: {
-            expression: ui.boundaryExpression.value
+            expression: ui.boundaryExpression.value,
+            type: 'dirichlet_all'  // 또는 동적으로 선택
         },
         equation: {
             type: eqType,
