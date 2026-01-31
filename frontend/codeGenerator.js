@@ -30,7 +30,7 @@ class FEniCSCodeGenerator {
         code += this.generateTimeSet(config.equation);
         code += this.generateGmshMesh(config.dimension, config.mesh);
         code += this.generateFunctionSpace(config.functionSpace);
-        code += this.generateBoundaryCondition(config.dimension, config.boundaryCondition);
+        code += this.generateBoundaryCondition(config.dimension, config.boundaryCondition, config.equation);
         code += this.generateWeakForm(config.equation);
         code += this.generateSolver(config.equation);
         code += this.generateErrorAnalysis(config.exactSolution, config.boundaryCondition.expression, config.equation);
