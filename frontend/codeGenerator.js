@@ -484,7 +484,7 @@ if mesh_comm.rank == 0:
     generateErrorAnalysis(exactSolution, boundaryExpression, equation) {
         const { type, params } = equation;
         if (type === 'heat' || (type === 'custom' && params.time_dependent)) {
-            return;
+            return '';
         }
         if (!exactSolution) {
             return `# ============================================
@@ -530,7 +530,7 @@ if mesh_comm.rank == 0:
     generatePostprocess(hasExactSolution, equation) {
         const { type, params } = equation;
         if (type === 'heat' || (type === 'custom' && params.time_dependent)) {
-            return;
+            return '';
         }
         let code = `# ============================================
 # Save Results (XDMF/HDF5)
