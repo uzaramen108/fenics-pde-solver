@@ -272,10 +272,10 @@ V = fem.functionspace(domain, ("${type}", ${degree}))
 `;
         if (equation.type === 'heat' || (equation.type === 'custom' && equation.params.time_dependent)) {
             const initial = equation.params.initial || 0;
-            const safeInitial = this._wrapExpr(initial);
+            const safeInitial = _wrapExpr(initial);
             code +=`
 u_n = fem.Function(V, name="u_n")
-u_n.interpolate(${safeInitial})
+u_n.interpolate(lambda x: ${safeInitial})
 
 uh = fem.Function(V, name="u")
 uh.x.array[:] = u_n.x.array
