@@ -358,6 +358,7 @@ f = fem.Constant(domain, default_scalar_type(${source}))
 dt = ${dt}
 t = 0.0
 T = ${T}
+num_steps = int(T / dt)
 
 #u_n = fem.Function(V)
 #u_n.interpolate(lambda x: ${safeInitial})
