@@ -355,9 +355,9 @@ L = f * v * ufl.dx
 
             code += `# Heat: ∂u/∂t - ∇²u = f (Backward Euler)
 f = fem.Constant(domain, default_scalar_type(${source}))
-dt = fem.Constant(domain, default_scalar_type(${dt}))
+dt = ${dt}
 t = 0.0
-T = default_scalar_type(${T})
+T = ${T}
 
 #u_n = fem.Function(V)
 #u_n.interpolate(lambda x: ${safeInitial})
