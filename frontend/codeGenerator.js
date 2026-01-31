@@ -5,6 +5,13 @@ class FEniCSCodeGenerator {
         this.version = '0.10.0';
     }
 
+    _wrapExpr(expr) {
+        if (String(expr).includes('x[')) {
+            return expr;
+        }
+        return `np.full(x.shape[1], ${expr})`;
+    }
+
     generate(config) {
         /*
         config = {
