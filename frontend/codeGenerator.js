@@ -43,7 +43,7 @@ class FEniCSCodeGenerator {
 import gmsh
 from mpi4py import MPI
 from dolfinx import mesh, fem, default_scalar_type, io
-from dolfinx.io import gmshio
+from dolfinx.io import gmsh as gmshio
 from dolfinx.fem.petsc import LinearProblem
 import numpy as np
 import ufl
