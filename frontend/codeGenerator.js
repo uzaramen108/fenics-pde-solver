@@ -356,12 +356,6 @@ with io.XDMFFile(domain.comm, filename.with_suffix(".xdmf"), "w") as xdmf:
     print(f"   - {filename.with_suffix('.h5')}")
 `;
 
-        if (hasExactSolution) {
-            code += `    print(f"   - {exact_filename.with_suffix('.xdmf')}")
-    print(f"   - {exact_filename.with_suffix('.h5')}")
-`;
-        }
-
         code += `    print(f"\\n📊 To visualize in ParaView:")
     print(f"   1. Open ParaView")
     print(f"   2. File → Open → solution.xdmf")
