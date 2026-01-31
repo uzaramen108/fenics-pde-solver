@@ -36,6 +36,10 @@ const ui = {
     customParams: $('customParams'),
     customA: $('customA'),
     customL: $('customL'),
+    customTimeDep: $('customTimeDep'),
+    customTimeGroup: $('customTimeGroup'),
+    customT: $('customT'),
+    customDt: $('customDt'),
     // Exact solution
     hasExactSolution: $('hasExactSolution'),
     exactSolution: $('exactSolution'),
@@ -88,6 +92,10 @@ ui.equationType.addEventListener('change', function() {
     ui.heatParams.style.display = type === 'heat' ? 'block' : 'none';
     ui.helmholtzParams.style.display = type === 'helmholtz' ? 'block' : 'none';
     ui.customParams.style.display = type === 'custom' ? 'block' : 'none';
+});
+
+ui.customTimeDep.addEventListener('change', function() {
+    ui.customTimeGroup.style.display = this.checked ? 'block' : 'none';
 });
 
 // 정확해 체크박스
@@ -161,7 +169,10 @@ function collectConfig() {
     } else if (eqType === 'custom') {
         config.equation.params = {
             custom_a: ui.customA.value,
-            custom_L: ui.customL.value
+            custom_L: ui.customL.value,
+            time_dependent: ui.customTimeDep.checked,
+            T: parseFloat(ui.customT.value),
+            dt: parseFloat(ui.customDt.value)
         };
     }
     

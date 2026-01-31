@@ -26,20 +26,34 @@ class FEniCSCodeGenerator {
         }
         */
 
-        let code = this.generateHeader();
+        let code = this.generateHeader(config.equation);
+        code += this.generateTimeSet(config.equation);
         code += this.generateGmshMesh(config.dimension, config.mesh);
         code += this.generateFunctionSpace(config.functionSpace);
         code += this.generateBoundaryCondition(config.dimension, config.boundaryCondition);
         code += this.generateWeakForm(config.equation);
-        code += this.generateSolver();
-        code += this.generateErrorAnalysis(config.exactSolution, config.boundaryCondition.expression);
-        code += this.generatePostprocess(!!config.exactSolution);
+        code += this.generateSolver(config.equation);
+        code += this.generateErrorAnalysis(config.exactSolution, config.boundaryCondition.expression, config.equation);
+        code += this.generatePostprocess(!!config.exactSolution, config.equation);
 
         return code;
     }
 
-    generateHeader() {
-        return `# FEniCSx v0.10.0 Auto-generated Code
+    generateHeader(equation) {
+        const { type, params } = equation;
+        let pass = true;
+        if (type === 'heat') {
+            pass = false;
+        } else if (type === 'custom') {
+            str = (params.custom_a || '') + (params.custom_L || '');
+            const conditionDt = /(?<![a-zA-Z])dt(?![a-zA-Z])/.test(str);
+            const conditionT = /(?<![a-zA-Z])t(?![a-zA-Z])/.test(str);
+            if (conditionDt || conditionT) {
+                pass = false;
+            }
+        }
+        if (pass) {
+            return `# FEniCSx v0.10.0 Auto-generated Code
 import gmsh
 from mpi4py import MPI
 from dolfinx import mesh, fem, default_scalar_type
@@ -57,7 +71,41 @@ results_folder = Path("results")
 results_folder.mkdir(exist_ok=True, parents=True)
 filename = results_folder / "solution"
 
-`;
+`;      } else {
+            return `# FEniCSx v0.10.0 Auto-generated Code
+import gmsh
+from mpi4py import MPI
+from dolfinx import mesh, fem, default_scalar_type
+from dolfinx.io import gmsh as gmshio
+from dolfinx.fem.petsc import assemble_matrix, assemble_vector, apply_lifting, set_bc
+import numpy as np
+import ufl
+
+# XDMF/HDF5 파일로 저장 (ParaView 사용)
+from dolfinx import io
+from pathlib import Path
+from petsc4py import PETSc
+
+# Results folder
+results_folder = Path("results")
+results_folder.mkdir(exist_ok=True, parents=True)
+filename = results_folder / "solution"
+
+`;      }
+    }
+
+    generateTimeSet(equation) {
+        const { type, params } = equation;
+        if (type === 'custom') {
+            let code = `# T-dependent settings
+t = 0.0
+T = ${params.T || 1.0}
+dt = ${params.dT || 0.1}
+num_steps = int(T / dt)
+
+`;      
+        return code;
+        }
     }
 
     generateGmshMesh(dimension, meshConfig) {
@@ -209,16 +257,30 @@ V = fem.functionspace(domain, ("${type}", ${degree}))
 `;
     }
 
-    generateBoundaryCondition(dimension, bc) {
+    generateBoundaryCondition(dimension, bc, equation) {
         const { expression, type } = bc;
+        const { eqtype, params } = equation;
+        const initial = params.initial || 0;
+        const safeInitial = this._wrapExpr(initial);
 
         let code = `# ============================================
 # Boundary Conditions
 # ============================================
+`;
+        if (eqtype === 'heat' || (eqtype === 'custom' && params.time_dependent)) {
+            code +=`
+u_n = fem.Function(V, name="u_n")
+u_n.interpolate(${safeInitial})
+
+uh = fem.Function(V, name="u")
+uh.x.array[:] = u_n.x.array
+`;
+        } else {
+            code +=`
 uD = fem.Function(V)
 uD.interpolate(lambda x: ${expression})
-
 `;
+        }
 
         if (dimension === '1d') {
             code += `# 1D: Fix both endpoints
@@ -245,7 +307,7 @@ domain.topology.create_connectivity(fdim, tdim)
 boundary_facets = mesh.exterior_facet_indices(domain.topology)
 
 boundary_dofs = fem.locate_dofs_topological(V, fdim, boundary_facets)
-bc = fem.dirichletbc(uD, boundary_dofs)
+bc = fem.dirichletbc(uD, boundary_dofs, V)
 `;
         }
 
@@ -280,12 +342,15 @@ L = f * v * ufl.dx
             const source = params.source || 0;
             const dt = params.dt || 0.01;
             const initial = params.initial || 0;
+
+            const safeInitial = this._wrapExpr(initial); // 추후 변경 예정(불균일 배경)
+
             code += `# Heat: ∂u/∂t - ∇²u = f (Backward Euler)
 f = fem.Constant(domain, default_scalar_type(${source}))
 dt = fem.Constant(domain, default_scalar_type(${dt}))
 
-u_n = fem.Function(V)
-u_n.interpolate(lambda x: ${initial})
+#u_n = fem.Function(V)
+#u_n.interpolate(lambda x: ${safeInitial})
 
 a = (u / dt) * v * ufl.dx + ufl.dot(ufl.grad(u), ufl.grad(v)) * ufl.dx
 L = (u_n / dt + f) * v * ufl.dx
@@ -301,8 +366,10 @@ a = (ufl.dot(ufl.grad(u), ufl.grad(v)) + k**2 * u * v) * ufl.dx
 L = f * v * ufl.dx
 `;
         } else {
+            const source = params.source || 0;
             // custom
             code += `# Custom weak form
+f = fem.Constant(domain, default_scalar_type(${source}))
 ${params.custom_a || 'a = ufl.dot(ufl.grad(u), ufl.grad(v)) * ufl.dx'}
 ${params.custom_L || 'L = fem.Constant(domain, default_scalar_type(0)) * v * ufl.dx'}
 `;
@@ -311,8 +378,80 @@ ${params.custom_L || 'L = fem.Constant(domain, default_scalar_type(0)) * v * ufl
         return code + '\n';
     }
 
-    generateSolver() {
-        return `# ============================================
+    generateSolver(equation) {
+        const { type, params } = equation;
+        if (type === 'heat' || (type === 'custom' && params.time_dependent)) {
+            return `# ============================================
+# Solve
+# ============================================
+# Form 컴파일
+a_form = fem.form(a)
+L_form = fem.form(L)
+
+# ---------------------------
+# 6. 행렬 및 벡터 사전 조립
+# ---------------------------
+A = assemble_matrix(a_form, bcs=[bc])
+A.assemble()
+
+# ✅ [수정됨] create_vector 대신 assemble_vector로 벡터 생성 및 초기화
+# 이렇게 하면 API 호환성 문제 없이 안전하게 PETSc 벡터가 생성됩니다.
+b = assemble_vector(L_form)
+
+# KSP 솔버 설정
+ksp = PETSc.KSP().create(domain.comm)
+ksp.setOperators(A)
+ksp.setType("cg")
+ksp.getPC().setType("gamg")
+ksp.setTolerances(rtol=1e-10)
+ksp.setFromOptions()
+
+# ---------------------------
+# 7. 시간 루프
+# ---------------------------
+with io.XDMFFile(domain.comm, filename.with_suffix(".xdmf"), "w") as xdmf:
+    xdmf.write_mesh(domain)
+    xdmf.write_function(uh, t)
+
+    if mesh_comm.rank == 0:
+        print(f"✅ Time loop started (T={T}, dt={dt:.4f})")
+
+    for n in range(num_steps):
+        t += dt
+
+        # RHS 벡터 리셋 (0으로 초기화)
+        with b.localForm() as loc:
+            loc.set(0)
+        
+        # 현재 스텝의 L_form으로 벡터 재조립
+        assemble_vector(b, L_form)
+        
+        # BC 적용
+        apply_lifting(b, [a_form], [[bc]], x0=[uh.x.petsc_vec])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b, [bc], uh.x.petsc_vec, 1.0)
+
+        # 풀이
+        ksp.solve(b, uh.x.petsc_vec)
+        uh.x.scatter_forward()
+
+        # 업데이트
+        u_n.x.array[:] = uh.x.array
+
+        # 저장
+        xdmf.write_function(uh, t)
+
+        if mesh_comm.rank == 0 and (n % 10 == 0 or n == num_steps - 1):
+            min_val = np.min(uh.x.array)
+            max_val = np.max(uh.x.array)
+            print(f"   Step {n+1:3d}/{num_steps}, t={t:.3f}, u range=[{min_val:.3e}, {max_val:.3e}]")
+
+if mesh_comm.rank == 0:
+    print(f"\n✅ Simulation complete")
+
+`;
+        } else {
+            return `# ============================================
 # Solve
 # ============================================
 problem = LinearProblem(
@@ -328,9 +467,14 @@ if mesh_comm.rank == 0:
     print(f"✅ Problem solved")
 
 `;
+        }
     }
 
-    generateErrorAnalysis(exactSolution, boundaryExpression) {
+    generateErrorAnalysis(exactSolution, boundaryExpression, equation) {
+        const { type, params } = equation;
+        if (type === 'heat' || (type === 'custom' && params.time_dependent)) {
+            return;
+        }
         if (!exactSolution) {
             return `# ============================================
 # Statistics
@@ -372,7 +516,11 @@ if mesh_comm.rank == 0:
         }
     }
 
-    generatePostprocess(hasExactSolution) {
+    generatePostprocess(hasExactSolution, equation) {
+        const { type, params } = equation;
+        if (type === 'heat' || (type === 'custom' && params.time_dependent)) {
+            return;
+        }
         let code = `# ============================================
 # Save Results (XDMF/HDF5)
 # ============================================
