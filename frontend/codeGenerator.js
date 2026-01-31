@@ -42,11 +42,14 @@ class FEniCSCodeGenerator {
         return `# FEniCSx v0.10.0 Auto-generated Code
 import gmsh
 from mpi4py import MPI
-from dolfinx import mesh, fem, default_scalar_type, io
+from dolfinx import mesh, fem, default_scalar_type
 from dolfinx.io import gmsh as gmshio
 from dolfinx.fem.petsc import LinearProblem
-import numpy as np
+import numpy
 import ufl
+
+# XDMF/HDF5 파일로 저장 (ParaView 사용)
+from dolfinx import io
 from pathlib import Path
 
 # Results folder
