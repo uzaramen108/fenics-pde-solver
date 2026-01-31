@@ -104,6 +104,38 @@ gdim = 2
 gmsh.model.addPhysicalGroup(gdim, [lshape[0][1]], 1)
 gmsh.model.setPhysicalName(gdim, 1, "Domain")
 `;
+            } else if (shape === 'polygon') {
+                // ✅ [추가된 부분] 다각형 처리 로직
+                // points 데이터가 없으면 기본 삼각형 생성 (에러 방지)
+                const points = meshConfig.points || [[0,0], [1,0], [0,1]];
+                
+                code += `# 2D Custom Polygon
+# Points 정의
+poly_points = []
+`;
+                // 1. 점 생성 (Javascript에서 좌표를 순회하며 파이썬 코드 생성)
+                points.forEach((pt, i) => {
+                    code += `poly_points.append(gmsh.model.geo.addPoint(${pt[0]}, ${pt[1]}, 0.0, ${characteristicLength}))\n`;
+                });
+
+                code += `
+# Lines 연결 (마지막 점 -> 첫 점 자동 연결)
+poly_lines = []
+for i in range(len(poly_points)):
+    p_start = poly_points[i]
+    p_end = poly_points[(i + 1) % len(poly_points)] # Wrap around
+    poly_lines.append(gmsh.model.geo.addLine(p_start, p_end))
+
+# Curve Loop & Surface 생성
+curve_loop = gmsh.model.geo.addCurveLoop(poly_lines)
+plane_surface = gmsh.model.geo.addPlaneSurface([curve_loop])
+
+gmsh.model.geo.synchronize()
+
+gdim = 2
+gmsh.model.addPhysicalGroup(gdim, [plane_surface], 1)
+gmsh.model.setPhysicalName(gdim, 1, "Domain")
+`;
             } else {
                 // rectangle (default)
                 code += `# 2D Rectangle: [0,1] x [0,1]

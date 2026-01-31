@@ -381,3 +381,50 @@ body {
 /* 스크롤바 커스텀 */
 .coordinate-list::-webkit-scrollbar { width: 6px; }
 .coordinate-list::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+.form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #a855f7;
+        }
+        #generatedCode {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: #d8b4fe;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(168, 85, 247, 0.3);
+            color: #fff;
+        }
