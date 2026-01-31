@@ -307,7 +307,7 @@ domain.topology.create_connectivity(fdim, tdim)
 boundary_facets = mesh.exterior_facet_indices(domain.topology)
 
 boundary_dofs = fem.locate_dofs_topological(V, fdim, boundary_facets)
-bc = fem.dirichletbc(uD, boundary_dofs, V)
+bc = fem.dirichletbc(uD, boundary_dofs)
 `;
         }
 
