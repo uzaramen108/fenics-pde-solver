@@ -45,7 +45,7 @@ from mpi4py import MPI
 from dolfinx import mesh, fem, default_scalar_type
 from dolfinx.io import gmsh as gmshio
 from dolfinx.fem.petsc import LinearProblem
-import numpy
+import numpy as np
 import ufl
 
 # XDMF/HDF5 파일로 저장 (ParaView 사용)
