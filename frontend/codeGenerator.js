@@ -357,7 +357,7 @@ L = f * v * ufl.dx
 f = fem.Constant(domain, default_scalar_type(${source}))
 dt = fem.Constant(domain, default_scalar_type(${dt}))
 t = 0.0
-T = ${T}
+T = default_scalar_type(${T})
 
 #u_n = fem.Function(V)
 #u_n.interpolate(lambda x: ${safeInitial})
