@@ -279,6 +279,8 @@ u_n.interpolate(lambda x: ${safeInitial})
 
 uh = fem.Function(V, name="u")
 uh.x.array[:] = u_n.x.array
+
+uD = fem.Function(V)
 `;
         } else {
             code +=`
