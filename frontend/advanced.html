@@ -81,12 +81,19 @@
                 <h3 style="margin-top: 1.5rem; color: #d8b4fe;">메시 설정 (gmsh)</h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="meshLc">격자 크기 (lc)</label>
+                        <label for="meshLc">mesh 크기 (lc)</label>
                         <input type="number" id="meshLc" value="0.1" min="0.01" max="1" step="0.01">
                         <small>작을수록 조밀 (권장: 0.05~0.2)</small>
                     </div>
+                    <div class="form-group" id="meshElemTypeGroup">
+                        <label for="meshElemType">mesh 모양 (Element)</label>
+                        <select id="meshElemType">
+                            <option value="triangle" selected>Triangle (삼각형)</option>
+                            <option value="quad">Quadrilateral (사각/Quad)</option>
+                        </select>
+                    </div>
                     <div class="form-group" id="meshShapeGroup">
-                        <label for="meshShape">메시 형태</label>
+                        <label for="meshShape">영역 형태</label>
                         <div style="display: flex; gap: 0.5rem;">
                             <select id="meshShape" style="flex: 1;">
                                 <option value="triangle">Triangle</option>

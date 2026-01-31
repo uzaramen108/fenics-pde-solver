@@ -15,6 +15,8 @@ const ui = {
     meshNyGroup: $('meshNyGroup'),
     meshNzGroup: $('meshNzGroup'),
     meshShape: $('meshShape'),
+    meshElemType: $('meshElemType'),
+    meshElemTypeGroup: $('meshElemTypeGroup'),
     meshShapeGroup: $('meshShapeGroup'),
     meshLc: $('meshLc'),
     elementType: $('elementType'),
@@ -63,10 +65,16 @@ ui.dimension.addEventListener('change', function() {
     // 메시 형태 옵션 변경
     if (dim === '1d') {
         ui.meshShapeGroup.style.display = 'none';
+        ui.meshElemTypeGroup.style.display = 'none';
         // 1D로 가면 편집 버튼 숨김
         document.getElementById('polygonConfigBtn').style.display = 'none'; 
     } else if (dim === '2d') {
         ui.meshShapeGroup.style.display = 'block';
+        ui.meshElemTypeGroup.style.display = 'block';
+        ui.meshElemType.innerHTML = `
+            <option value="triangle" selected>Triangle (삼각형)</option>
+            <option value="quad">Quadrilateral (사각형/Quad)</option>
+        `;
         ui.meshShape.innerHTML = `
             <option value="rectangle">Rectangle</option>
             <option value="circle">Circle</option>
@@ -75,6 +83,11 @@ ui.dimension.addEventListener('change', function() {
             <option value="polygon">Custom Polygon (2D)</option> `;
     } else if (dim === '3d') {
         ui.meshShapeGroup.style.display = 'block';
+        ui.meshElemTypeGroup.style.display = 'block';
+        ui.meshElemType.innerHTML = `
+            <option value="tetra">Tetrahedron (사면체)</option>
+            <option value="hexa">Hexahedron (육면체/Hex)</option>
+        `;
         ui.meshShape.innerHTML = `
             <option value="box">Box</option>
             <option value="sphere">Sphere</option>
@@ -125,6 +138,7 @@ function collectConfig() {
     // 1. 메시 설정을 먼저 변수로 분리합니다.
     let meshConfig = {
         shape: ui.meshShape.value,
+        elemType: ui.meshElemType.value,
         lc: parseFloat(ui.meshLc.value || 0.1)
     };
 

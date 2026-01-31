@@ -117,7 +117,7 @@ num_steps = int(T / dt)
     }
 
     generateGmshMesh(dimension, meshConfig) {
-        const { shape, lc } = meshConfig;
+        const { shape, lc, elemtype } = meshConfig;
         const characteristicLength = lc || 0.1;
 
         let code = `# ============================================
@@ -227,9 +227,21 @@ gmsh.option.setNumber("Mesh.CharacteristicLengthMin", ${characteristicLength})
 gmsh.option.setNumber("Mesh.CharacteristicLengthMax", ${characteristicLength})
 `;
 
-        if (dimension === '2d' && shape === 'rectangle') {
-            code += `gmsh.option.setNumber("Mesh.RecombineAll", 1)  # Quadrilateral elements
-gmsh.option.setNumber("Mesh.Algorithm", 8)  # Frontal-Delaunay for Quads
+        if (elemType === 'quad' || elemType === 'hexa') {
+            code += `
+# Element Type: Quadrilateral (2D) or Hexahedron (3D)
+gmsh.option.setNumber("Mesh.RecombineAll", 1)
+gmsh.option.setNumber("Mesh.Algorithm", 8) # Frontal-Delaunay for Quads
+`;
+            // 3D Hexa의 경우 추가 알고리즘 설정이 도움이 될 수 있음
+            if (dimension === '3d') {
+                code += `gmsh.option.setNumber("Mesh.Algorithm3D", 1) # 3D Delaunay\n`;
+            }
+        } else {
+            code += `
+# Element Type: Triangle (2D) or Tetrahedron (3D)
+gmsh.option.setNumber("Mesh.RecombineAll", 0)
+gmsh.option.setNumber("Mesh.Algorithm", 6) # Frontal-Delaunay
 `;
         }
 
