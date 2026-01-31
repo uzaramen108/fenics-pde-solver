@@ -349,17 +349,56 @@ with io.XDMFFile(domain.comm, filename.with_suffix(".xdmf"), "w") as xdmf:
 
 `;
 
+        if (hasExactSolution) {
+            code += `# Save exact solution
+exact_filename = results_folder / "exact_solution"
+with io.XDMFFile(domain.comm, exact_filename.with_suffix(".xdmf"), "w") as xdmf:
+    xdmf.write_mesh(domain)
+    xdmf.write_function(uex)
+
+`;
+        }
+
         code += `if mesh_comm.rank == 0:
     print(f"\\n✅ Files saved:")
     print(f"   - {filename.with_suffix('.xdmf')}")
     print(f"   - {filename.with_suffix('.h5')}")
 `;
 
+        if (hasExactSolution) {
+            code += `    print(f"   - {exact_filename.with_suffix('.xdmf')}")
+    print(f"   - {exact_filename.with_suffix('.h5')}")
+`;
+        }
+
         code += `    print(f"\\n📊 To visualize in ParaView:")
     print(f"   1. Open ParaView")
     print(f"   2. File → Open → solution.xdmf")
     print(f"   3. Click 'Apply'")
     print(f"   4. Select 'u' variable")
+
+# JSON output for web interface
+import json
+result = {
+    "xdmf_file": str(filename.with_suffix(".xdmf")),
+    "h5_file": str(filename.with_suffix(".h5")),
+    "dofs": uh.x.array.size
+}
+`;
+
+        if (hasExactSolution) {
+            code += `result["error_L2"] = f"{error_L2:.2e}"
+result["error_max"] = f"{error_max:.2e}"
+`;
+        } else {
+            code += `result["solution_norm"] = f"{solution_norm:.2e}"
+result["solution_min"] = f"{solution_min:.2e}"
+result["solution_max"] = f"{solution_max:.2e}"
+`;
+        }
+
+        code += `
+print(json.dumps(result))
 `;
 
         return code;
