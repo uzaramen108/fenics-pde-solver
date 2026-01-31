@@ -117,7 +117,7 @@ num_steps = int(T / dt)
     }
 
     generateGmshMesh(dimension, meshConfig) {
-        const { shape, lc, elemtype } = meshConfig;
+        const { shape, lc, elemType } = meshConfig;
         const characteristicLength = lc || 0.1;
 
         let code = `# ============================================
@@ -202,8 +202,13 @@ gmsh.model.setPhysicalName(gdim, 1, "Domain")
             }
         } else if (dimension === '3d') {
             if (shape === 'sphere') {
-                code += `# 3D Sphere: center (0.5, 0.5, 0.5), radius 0.5
-sphere = gmsh.model.occ.addSphere(0.5, 0.5, 0.5, 0.5)
+                const cx = meshConfig.center ? meshConfig.center[0] : 0.5;
+                const cy = meshConfig.center ? meshConfig.center[1] : 0.5;
+                const cz = meshConfig.center ? meshConfig.center[2] : 0.5;
+                const r = meshConfig.radius || 0.5;
+
+                code += `# 3D Sphere: center (${cx}, ${cy}, ${cz}), radius ${r}
+sphere = gmsh.model.occ.addSphere(${cx}, ${cy}, ${cz}, ${r})
 gmsh.model.occ.synchronize()
 gdim = 3
 gmsh.model.addPhysicalGroup(gdim, [sphere], 1)

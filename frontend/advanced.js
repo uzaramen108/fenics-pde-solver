@@ -22,6 +22,11 @@ const ui = {
     elementType: $('elementType'),
     degree: $('degree'),
     boundaryExpression: $('boundaryExpression'),
+    circleSphereParams: $('circleSphereParams'),
+    meshRadius: $('meshRadius'),
+    meshCenterX: $('meshCenterX'),
+    meshCenterY: $('meshCenterY'),
+    meshCenterZ: $('meshCenterZ'),
     // Poisson
     poissonParams: $('poissonParams'),
     poissonSource: $('poissonSource'),
@@ -96,6 +101,7 @@ ui.dimension.addEventListener('change', function() {
     }
     
     updateBoundaryExample(dim);
+    setTimeout(updateShapeParamsUI, 0);
 });
 
 // 방정식 유형 변경 시
@@ -116,6 +122,28 @@ ui.customTimeDep.addEventListener('change', function() {
 ui.hasExactSolution.addEventListener('change', function() {
     ui.exactSolutionGroup.style.display = this.checked ? 'block' : 'none';
 });
+
+function updateShapeParamsUI() {
+    const shape = ui.meshShape.value;
+    const dim = ui.dimension.value;
+
+    // 1. Circle 또는 Sphere일 때만 파라미터 창 표시
+    if (shape === 'circle' || shape === 'sphere') {
+        ui.circleSphereParams.style.display = 'block';
+        
+        // 2. 3D일 때만 Z축 입력 활성화
+        if (dim === '3d') {
+            ui.meshCenterZ.style.display = 'block';
+        } else {
+            ui.meshCenterZ.style.display = 'none';
+        }
+    } else {
+        ui.circleSphereParams.style.display = 'none';
+    }
+}
+
+// [이벤트 연결] 모양 변경 시 & 차원 변경 시 호출
+ui.meshShape.addEventListener('change', updateShapeParamsUI);
 
 // 경계 조건 예제 업데이트
 function updateBoundaryExample(dim) {
@@ -141,6 +169,20 @@ function collectConfig() {
         elemType: ui.meshElemType.value,
         lc: parseFloat(ui.meshLc.value || 0.1)
     };
+
+    if (meshConfig.shape === 'circle' || meshConfig.shape === 'sphere') {
+        meshConfig.radius = parseFloat(ui.meshRadius.value || 0.5);
+        
+        const cx = parseFloat(ui.meshCenterX.value || 0.0);
+        const cy = parseFloat(ui.meshCenterY.value || 0.0);
+        
+        if (ui.dimension.value === '3d') {
+            const cz = parseFloat(ui.meshCenterZ.value || 0.0);
+            meshConfig.center = [cx, cy, cz];
+        } else {
+            meshConfig.center = [cx, cy];
+        }
+    }
 
     // 2. 만약 'polygon' 모드라면, 전역 변수 polygonPoints에서 좌표를 가져와 추가합니다.
     if (meshConfig.shape === 'polygon' && typeof polygonPoints !== 'undefined') {
