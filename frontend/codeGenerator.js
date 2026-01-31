@@ -259,7 +259,6 @@ V = fem.functionspace(domain, ("${type}", ${degree}))
 
     generateBoundaryCondition(dimension, bc, equation) {
         const { expression, type } = bc;
-        const { eqtype, params } = equation;
         const initial = params.initial || 0;
         const safeInitial = this._wrapExpr(initial);
 
@@ -267,7 +266,7 @@ V = fem.functionspace(domain, ("${type}", ${degree}))
 # Boundary Conditions
 # ============================================
 `;
-        if (eqtype === 'heat' || (eqtype === 'custom' && params.time_dependent)) {
+        if (equation.type === 'heat' || (equation.type === 'custom' && equation.params.time_dependent)) {
             code +=`
 u_n = fem.Function(V, name="u_n")
 u_n.interpolate(${safeInitial})
