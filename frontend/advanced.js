@@ -58,6 +58,8 @@ ui.dimension.addEventListener('change', function() {
     // 메시 형태 옵션 변경
     if (dim === '1d') {
         ui.meshShapeGroup.style.display = 'none';
+        // 1D로 가면 편집 버튼 숨김
+        document.getElementById('polygonConfigBtn').style.display = 'none'; 
     } else if (dim === '2d') {
         ui.meshShapeGroup.style.display = 'block';
         ui.meshShape.innerHTML = `
@@ -65,13 +67,14 @@ ui.dimension.addEventListener('change', function() {
             <option value="circle">Circle</option>
             <option value="lshape">L-Shape</option>
             <option value="triangle">Triangle</option>
-        `;
+            <option value="polygon">Custom Polygon (2D)</option> `;
     } else if (dim === '3d') {
         ui.meshShapeGroup.style.display = 'block';
         ui.meshShape.innerHTML = `
             <option value="box">Box</option>
             <option value="sphere">Sphere</option>
         `;
+        document.getElementById('polygonConfigBtn').style.display = 'none';
     }
     
     updateBoundaryExample(dim);
@@ -110,19 +113,29 @@ function collectConfig() {
     const dim = ui.dimension.value;
     const eqType = ui.equationType.value;
     
+    // 1. 메시 설정을 먼저 변수로 분리합니다.
+    let meshConfig = {
+        shape: ui.meshShape.value,
+        lc: parseFloat(ui.meshLc.value || 0.1)
+    };
+
+    // 2. 만약 'polygon' 모드라면, 전역 변수 polygonPoints에서 좌표를 가져와 추가합니다.
+    if (meshConfig.shape === 'polygon' && typeof polygonPoints !== 'undefined') {
+        // {x:0, y:0} 형태를 파이썬이 좋아하는 [0, 0] 배열 형태로 변환
+        meshConfig.points = polygonPoints.map(pt => [pt.x, pt.y]);
+    }
+
+    // 3. 완성된 meshConfig를 config 객체에 넣습니다.
     const config = {
         dimension: dim,
-        mesh: {
-            shape: ui.meshShape.value,
-            lc: parseFloat(ui.meshLc.value || 0.1)
-        },
+        mesh: meshConfig, // ✅ 수정됨: 위에서 만든 변수 사용
         functionSpace: {
             type: ui.elementType.value,
             degree: parseInt(ui.degree.value)
         },
         boundaryCondition: {
             expression: ui.boundaryExpression.value,
-            type: 'dirichlet_all'  // 또는 동적으로 선택
+            type: 'dirichlet_all'
         },
         equation: {
             type: eqType,
@@ -131,7 +144,7 @@ function collectConfig() {
         exactSolution: ui.hasExactSolution.checked ? ui.exactSolution.value : null
     };
     
-    // 방정식별 파라미터
+    // 방정식별 파라미터 처리 (기존 코드 유지)
     if (eqType === 'poisson') {
         config.equation.params.source = ui.poissonSource.value;
     } else if (eqType === 'heat') {
@@ -299,3 +312,162 @@ ui.downloadBtn.addEventListener('click', downloadResults);
 
 console.log('✅ Advanced UI initialized');
 console.log('🔧 API URL:', window.APP_CONFIG.API_URL);
+
+// ==========================================
+// 다각형(Polygon) 설정 로직
+// ==========================================
+
+// 상태 관리
+let polygonPoints = [
+    { x: 0.0, y: 0.0 },
+    { x: 1.0, y: 0.0 },
+    { x: 0.5, y: 1.0 }
+]; // 초기값 (삼각형)
+let polygonChart = null;
+
+const meshShapeSelect = document.getElementById('meshShape');
+const polygonConfigBtn = document.getElementById('polygonConfigBtn');
+const polygonModal = document.getElementById('polygonModal');
+
+// 1. 메시 형태 변경 시 버튼 표시 제어
+meshShapeSelect.addEventListener('change', (e) => {
+    const isPolygon = e.target.value === 'polygon';
+    polygonConfigBtn.style.display = isPolygon ? 'block' : 'none';
+    
+    // 차원 선택 체크 (Polygon은 2D에서만)
+    const dimension = document.getElementById('dimension').value;
+    if (isPolygon && dimension !== '2d') {
+        alert("Custom Polygon은 현재 2D에서만 지원됩니다.");
+        document.getElementById('dimension').value = '2d';
+    }
+});
+
+// 2. 모달 열기/닫기
+polygonConfigBtn.addEventListener('click', () => {
+    openPolygonModal();
+});
+
+document.querySelectorAll('.close-modal, #cancelPolygonBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        polygonModal.style.display = 'none';
+    });
+});
+
+// 적용 버튼 클릭
+document.getElementById('applyPolygonBtn').addEventListener('click', () => {
+    if (polygonPoints.length < 3) {
+        alert("최소 3개의 점이 필요합니다.");
+        return;
+    }
+    polygonModal.style.display = 'none';
+    // 여기에 실제 config 객체에 저장하는 로직이 들어감 (나중에 generate 호출 시 사용)
+    console.log("Polygon saved:", polygonPoints);
+});
+
+// 3. 모달 초기화 및 차트 생성
+function openPolygonModal() {
+    polygonModal.style.display = 'flex';
+    renderCoordinateList();
+    initOrUpdateChart();
+}
+
+// 4. 좌표 리스트 렌더링
+function renderCoordinateList() {
+    const list = document.getElementById('coordinateList');
+    list.innerHTML = '';
+
+    polygonPoints.forEach((pt, index) => {
+        const row = document.createElement('div');
+        row.className = 'coord-row';
+        row.innerHTML = `
+            <input type="number" step="0.1" value="${pt.x}" onchange="updatePoint(${index}, 'x', this.value)">
+            <input type="number" step="0.1" value="${pt.y}" onchange="updatePoint(${index}, 'y', this.value)">
+            <button class="remove-pt" onclick="removePoint(${index})">×</button>
+        `;
+        list.appendChild(row);
+    });
+}
+
+// 5. 포인트 추가/삭제/수정
+document.getElementById('addPointBtn').addEventListener('click', () => {
+    // 마지막 점과 같은 위치 혹은 약간 이동해서 추가
+    const last = polygonPoints[polygonPoints.length - 1] || { x: 0, y: 0 };
+    polygonPoints.push({ x: last.x + 0.2, y: last.y + 0.2 });
+    renderCoordinateList();
+    initOrUpdateChart();
+});
+
+window.removePoint = function(index) {
+    if (polygonPoints.length <= 3) {
+        alert("최소 3개의 점은 유지해야 합니다.");
+        return;
+    }
+    polygonPoints.splice(index, 1);
+    renderCoordinateList();
+    initOrUpdateChart();
+};
+
+window.updatePoint = function(index, axis, value) {
+    polygonPoints[index][axis] = parseFloat(value);
+    initOrUpdateChart();
+};
+
+// 6. Chart.js 시각화
+function initOrUpdateChart() {
+    const ctx = document.getElementById('polygonCanvas').getContext('2d');
+    
+    // 차트용 데이터: 마지막 점을 첫 점과 연결하여 닫힌 도형으로 표시
+    const chartData = [...polygonPoints];
+    if (chartData.length > 0) {
+        chartData.push(chartData[0]); // 루프 닫기
+    }
+
+    if (polygonChart) {
+        polygonChart.data.datasets[0].data = chartData;
+        polygonChart.update();
+    } else {
+        polygonChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Domain Geometry',
+                    data: chartData,
+                    showLine: true,
+                    borderColor: '#a855f7', // 테마 색상 (보라색)
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                    fill: true,
+                    pointBackgroundColor: '#fff',
+                    pointRadius: 5,
+                    tension: 0 // 직선 연결
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#ccc' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#ccc' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `(${context.parsed.x}, ${context.parsed.y})`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
