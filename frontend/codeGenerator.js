@@ -314,7 +314,7 @@ if mesh_comm.rank == 0:
     print(f"  Norm: {solution_norm:.6e}")
 
 `;
-        }
+        } else {
 
         return `# ============================================
 # Error Analysis
@@ -336,7 +336,8 @@ if mesh_comm.rank == 0:
     print(f"  Error_L2  : {error_L2:.2e}")
     print(f"  Error_max : {error_max:.2e}")
 
-`;
+`; 
+        }
     }
 
     generatePostprocess(hasExactSolution) {
@@ -348,16 +349,6 @@ with io.XDMFFile(domain.comm, filename.with_suffix(".xdmf"), "w") as xdmf:
     xdmf.write_function(uh)
 
 `;
-
-        if (hasExactSolution) {
-            code += `# Save exact solution
-exact_filename = results_folder / "exact_solution"
-with io.XDMFFile(domain.comm, exact_filename.with_suffix(".xdmf"), "w") as xdmf:
-    xdmf.write_mesh(domain)
-    xdmf.write_function(uex)
-
-`;
-        }
 
         code += `if mesh_comm.rank == 0:
     print(f"\\n✅ Files saved:")
@@ -398,7 +389,8 @@ result["solution_max"] = f"{solution_max:.2e}"
         }
 
         code += `
-print(json.dumps(result))
+if mesh_comm.rank == 0:
+    print(json.dumps(result))
 `;
 
         return code;
