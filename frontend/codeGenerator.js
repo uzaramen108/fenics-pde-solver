@@ -10,7 +10,7 @@ class FEniCSCodeGenerator {
         config = {
             dimension: '1d' | '2d' | '3d',
             mesh: { 
-                shape: 'rectangle' | 'circle' | 'lshape' | 'box' | 'sphere',
+                shape: 'rectangle' | 'circle' | 'lshape' | 'polygon' | 'box' | 'sphere',
                 lc: 0.1
             },
             functionSpace: { type: 'Lagrange', degree: 1 },
