@@ -26,6 +26,7 @@ const ui = {
     // Heat
     heatParams: $('heatParams'),
     heatDt: $('heatDt'),
+    heatT: $('heatT'),
     heatSource: $('heatSource'),
     heatInitial: $('heatInitial'),
     // Helmholtz
@@ -158,6 +159,7 @@ function collectConfig() {
     } else if (eqType === 'heat') {
         config.equation.params = {
             source: ui.heatSource.value,
+            T: ui.heatT.value,
             dt: ui.heatDt.value,
             initial: ui.heatInitial.value
         };

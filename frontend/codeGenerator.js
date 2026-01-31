@@ -347,6 +347,7 @@ L = f * v * ufl.dx
 `;
         } else if (type === 'heat') {
             const source = params.source || 0;
+            const T = params.T || 1.0;
             const dt = params.dt || 0.01;
             const initial = params.initial || 0;
 
@@ -356,6 +357,7 @@ L = f * v * ufl.dx
 f = fem.Constant(domain, default_scalar_type(${source}))
 dt = fem.Constant(domain, default_scalar_type(${dt}))
 t = 0.0
+T = ${T}
 
 #u_n = fem.Function(V)
 #u_n.interpolate(lambda x: ${safeInitial})
