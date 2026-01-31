@@ -161,8 +161,6 @@ gmsh.model.addPhysicalGroup(gdim, [lshape[0][1]], 1)
 gmsh.model.setPhysicalName(gdim, 1, "Domain")
 `;
             } else if (shape === 'polygon') {
-                // ✅ [추가된 부분] 다각형 처리 로직
-                // points 데이터가 없으면 기본 삼각형 생성 (에러 방지)
                 const points = meshConfig.points || [[0,0], [1,0], [0,1]];
                 
                 code += `# 2D Custom Polygon
@@ -454,7 +452,7 @@ with io.XDMFFile(domain.comm, filename.with_suffix(".xdmf"), "w") as xdmf:
             print(f"   Step {n+1:3d}/{num_steps}, t={t:.3f}, u range=[{min_val:.3e}, {max_val:.3e}]")
 
 if mesh_comm.rank == 0:
-    print(f"\n✅ Simulation complete")
+    print("✅ Simulation complete")
 
 `;
         } else {
