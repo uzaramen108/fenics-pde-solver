@@ -360,23 +360,6 @@ with io.XDMFFile(domain.comm, filename.with_suffix(".xdmf"), "w") as xdmf:
     print(f"   2. File → Open → solution.xdmf")
     print(f"   3. Click 'Apply'")
     print(f"   4. Select 'u' variable")
-
-# JSON output for web interface
-import json
-result = {
-    "xdmf_file": str(filename.with_suffix(".xdmf")),
-    "h5_file": str(filename.with_suffix(".h5")),
-    "dofs": uh.x.array.size
-}
-`;
-
-        code += `result["solution_norm"] = f"{solution_norm:.2e}"
-result["solution_min"] = f"{solution_min:.2e}"
-result["solution_max"] = f"{solution_max:.2e}"
-`;
-        
-        code += `
-print(json.dumps(result))
 `;
 
         return code;
