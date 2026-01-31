@@ -106,6 +106,7 @@ num_steps = int(T / dt)
 `;      
         return code;
         }
+        return;
     }
 
     generateGmshMesh(dimension, meshConfig) {
