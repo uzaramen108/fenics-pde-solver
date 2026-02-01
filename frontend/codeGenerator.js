@@ -163,8 +163,10 @@ gmsh.model.setPhysicalName(1, 1, "Domain")
 `;
         } else if (dimension === '2d') {
             if (shape === 'circle') {
-                code += `# 2D Circle: center (0.5, 0.5), radius 0.5
-circle = gmsh.model.occ.addDisk(0.5, 0.5, 0.0, 0.5, 0.5)
+                radius = meshConfig.radius || 0.5;
+                center = meshConfig.center || [0.5, 0.5];
+                code += `# 2D Circle: center (${center[0]}, ${center[1]}), radius ${radius}
+circle = gmsh.model.occ.addDisk(${center[0]}, ${center[1]}, 0.0, ${radius}, ${radius})
 gmsh.model.occ.synchronize()
 gdim = 2
 gmsh.model.addPhysicalGroup(gdim, [circle], 1)
