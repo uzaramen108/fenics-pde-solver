@@ -12,6 +12,26 @@ class FEniCSCodeGenerator {
         return `np.full(x.shape[1], ${expr})`;
     }
 
+    /**
+     * 입력 문자열의 타입을 분석하는 함수
+     * @param {string|number} expr - 입력값
+     * @returns {object} - { isScalar, isSpatial, isComplex, isTimeDep }
+     */
+    _analyzeInput(expr) {
+        const str = String(expr).trim();
+        const isSpatial = str.includes('x[');
+        const isComplex = /[0-9\.]j/.test(str);
+        const isTimeDep = /(?<![a-zA-Z])t(?![a-zA-Z])/.test(str) || /(?<![a-zA-Z])dt(?![a-zA-Z])/.test(str);
+        const isScalar = !isSpatial;
+
+        return {
+            isScalar,    // fem.Constant 사용 가능 여부
+            isSpatial,   // ufl.SpatialCoordinate 필요 여부
+            isComplex,   // PETSc ScalarType 확인용 (심화)
+            isTimeDep    // 시간 루프 갱신 필요 여부
+        };
+    }
+
     generate(config) {
         /*
         config = {
@@ -352,12 +372,29 @@ if mesh_comm.rank == 0:
 u = ufl.TrialFunction(V)
 v = ufl.TestFunction(V)
 
+`;  
+        const generateSourceTerm = (sourceVal) => {
+            const analysis = this._analyzeInput(sourceVal);
+            
+            if (analysis.isSpatial) {
+                // [Case 1] 공간 변수(x)가 포함된 식 -> UFL Expression 사용
+                return `# Source term 'f' is a spatial expression
+x = ufl.SpatialCoordinate(domain)
+f = ${sourceVal}
 `;
+            } else {
+                // [Case 2] 단순 상수 -> fem.Constant 사용
+                // 혹시 모를 배열 입력 방지를 위해 _wrapExpr 대신 단순 문자열 처리
+                return `# Source term 'f' is a constant
+f = fem.Constant(domain, default_scalar_type(${sourceVal}))
+`;
+            }
+        };
 
         if (type === 'poisson') {
             const source = params.source || 0;
             code += `# Poisson: -∇²u = f
-f = fem.Constant(domain, default_scalar_type(${source}))
+${generateSourceTerm(source)}
 
 a = ufl.dot(ufl.grad(u), ufl.grad(v)) * ufl.dx
 L = f * v * ufl.dx
@@ -371,7 +408,7 @@ L = f * v * ufl.dx
             const safeInitial = this._wrapExpr(initial); // 추후 변경 예정(불균일 배경)
 
             code += `# Heat: ∂u/∂t - ∇²u = f (Backward Euler)
-f = fem.Constant(domain, default_scalar_type(${source}))
+${generateSourceTerm(source)}
 dt = ${dt}
 t = 0.0
 T = ${T}
@@ -387,7 +424,7 @@ L = (u_n / dt + f) * v * ufl.dx
             const source = params.source || 0;
             const k = params.k || 1.0;
             code += `# Helmholtz: -∇²u + k²u = f
-f = fem.Constant(domain, default_scalar_type(${source}))
+${generateSourceTerm(source)}
 k = fem.Constant(domain, default_scalar_type(${k}))
 
 a = (ufl.dot(ufl.grad(u), ufl.grad(v)) + k**2 * u * v) * ufl.dx
@@ -397,7 +434,7 @@ L = f * v * ufl.dx
             const source = params.source || 0;
             // custom
             code += `# Custom weak form
-f = fem.Constant(domain, default_scalar_type(${source}))
+${generateSourceTerm(source)}
 ${params.custom_a || 'a = ufl.dot(ufl.grad(u), ufl.grad(v)) * ufl.dx'}
 ${params.custom_L || 'L = fem.Constant(domain, default_scalar_type(0)) * v * ufl.dx'}
 `;
