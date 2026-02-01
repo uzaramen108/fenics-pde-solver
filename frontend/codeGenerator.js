@@ -380,8 +380,8 @@ v = ufl.TestFunction(V)
                 // [Case 1] 공간 변수(x)가 포함된 식 -> UFL Expression 사용
                 return `# Source term 'f' is a spatial expression
 x = ufl.SpatialCoordinate(domain)
-Q = fem.functionspace(domain, ("Lagrange", 5))
-f = fem.Expression(${sourceVal}, Q.element.interpolation_points)
+#Q = fem.functionspace(domain, ("Lagrange", 5))
+f = ${sourceVal}
 `;
             } else {
                 // [Case 2] 단순 상수 -> fem.Constant 사용
