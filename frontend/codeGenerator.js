@@ -302,7 +302,7 @@ uD = fem.Function(V)
         } else {
             code +=`
 uD = fem.Function(V)
-uD.interpolate(lambda x: ${expression})
+uD.interpolate(lambda x: ${this._wrapExpr(expression)})
 `;
         }
 
