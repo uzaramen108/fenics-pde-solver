@@ -359,12 +359,56 @@ async function downloadResults() {
         return;
     }
     
+    // 버튼을 로딩 상태로 변경 (선택 사항)
+    const btn = ui.downloadBtn;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ 다운로드 중...';
+    btn.disabled = true;
+
     try {
         const url = `${window.APP_CONFIG.API_URL}/api/download/${currentExecutionId}`;
-        window.open(url, '_blank');
+        
+        // 1. fetch로 파일 데이터(Blob) 요청
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        
+        // 2. 현재 날짜/시간 포맷 생성 (예: 20260202_193000)
+        const now = new Date();
+        const timestamp = now.getFullYear().toString().slice(-2) + // 연도 뒤 2자리 (2026 -> 26)
+            (now.getMonth() + 1).toString().padStart(2, '0') +
+            now.getDate().toString().padStart(2, '0') + '_' +
+            now.getHours().toString().padStart(2, '0') +
+            now.getMinutes().toString().padStart(2, '0'); // 초 단위 제거
+
+        // 3. 원하는 파일명 생성
+        const filename = `fenics_result_${timestamp}_${currentExecutionId}.zip`;
+        
+        // 4. 가상 링크 생성 및 클릭 트리거 (파일명 강제 지정)
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = filename; // ✅ 여기서 파일명 결정!
+        
+        document.body.appendChild(a);
+        a.click();
+        
+        // 5. 뒷정리
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+        
     } catch (error) {
         console.error('❌ Download error:', error);
         alert('다운로드 중 오류가 발생했습니다.');
+    } finally {
+        // 버튼 복구
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
