@@ -147,15 +147,14 @@ body {
    ========================================= */
 .main-grid {
     display: grid;
-    /* ✅ 요청하신 대로 왼쪽 패널을 400px로 넓게 고정 */
-    grid-template-columns: 400px 1fr; 
+    grid-template-columns: 1fr 1fr; 
     gap: 2rem;
     align-items: start;
 }
 
 @media (max-width: 1024px) {
     .main-grid {
-        grid-template-columns: 1fr; /* 모바일/태블릿에선 1단 */
+        grid-template-columns: 1fr;
     }
 }
 
@@ -281,53 +280,63 @@ textarea {
 /* =========================================
    7. Buttons
    ========================================= */
-.btn-primary {
-    width: 100%;
-    padding: 1rem;
-    background: var(--primary-gradient);
-    border: none;
-    border-radius: 0.75rem;
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
+.btn-primary, .btn-success {
+    /* 1. 비율 및 크기 설정 (약 4:1 비율) */
+    width: 240px;       /* 너비 */
+    height: 60px;       /* 높이 */
+    min-width: 200px;   /* 최소 너비 보장 */
+    
+    /* 2. 중앙 정렬 */
+    margin: 1.5rem auto; /* 위아래 여백, 좌우 자동(중앙) */
+    display: flex;       /* Flexbox로 내부 텍스트 정렬 */
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-    margin-top: 1rem;
+    
+    /* 3. 디자인 */
+    border: none;
+    border-radius: 0.75rem; /* 모서리 둥글게 */
+    font-size: 1.1rem;      /* 글자 크기 살짝 키움 */
+    font-weight: 700;
+    cursor: pointer;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+    
+    /* 텍스트 줄바꿈 방지 */
+    white-space: nowrap; 
+}
+
+/* 생성 버튼 (보라색 그라데이션) */
+.btn-primary {
+    background: var(--primary-gradient);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
 }
 
+/* 다운로드 버튼 (초록색) */
 .btn-success {
     background: var(--success-color);
     color: white;
-    font-weight: 600;
-    border: none;
-    border-radius: 0.75rem;
-    padding: 0.8rem 1.5rem;
-    cursor: pointer;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    transition: background 0.2s;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
-.btn-success:hover { background: #059669; }
 
+.btn-success:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+}
+
+/* 아이콘 버튼 (오른쪽 패널의 작은 아이콘들 등)은 영향받지 않게 */
 .btn-icon {
-    padding: 0 0.8rem;
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-size: 1rem;
+    width: auto;
+    height: auto;
+    padding: 0.5rem 0.8rem;
+    display: inline-flex;
+    margin: 0;
 }
 .btn-icon:hover { background: var(--panel-border); }
 
