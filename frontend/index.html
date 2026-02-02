@@ -236,9 +236,10 @@
 
             <!-- 정확해 -->
             <h3 style="margin-top: 1.5rem; color: #d8b4fe;">정확해 (선택)</h3>
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="hasExactSolution" checked>정확해 제공 (오차 계산)
+            <div class="form-group" id="exactSolutionToggle" style="display: flex; align-items: center; gap: 0.5rem;">
+                <label style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    정확해 제공 (오차 계산)
+                    <input type="checkbox" id="hasExactSolution" checked style="width: auto; margin: 0;">
                 </label>
             </div>
             <div class="form-group" id="exactSolutionGroup">
@@ -257,11 +258,19 @@
 
         <!-- 코드 및 결과 -->
         <div class="panel">
-            <h2>🐍 생성된 Python 코드</h2>
-            <button id="copyCodeBtn" class="btn-icon" title="코드 복사">
-                <span class="icon-copy">📋</span>
-                <span class="icon-check" style="display:none;">✅</span>
-            </button>
+            <div class="code-header">
+                <h2>🐍 생성된 Python 코드</h2>
+                <button id="copyCodeBtn" class="copy-btn">
+                    <svg class="copy-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <svg class="check-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span class="copy-text">복사</span>
+                </button>
+            </div>
             <pre id="generatedCode" style="background: #0f172a; padding: 1rem; border-radius: 0.5rem; overflow-x: auto;"><code style="color: #86efac;">// 설정 후 "코드 생성 및 실행" 버튼을 클릭하세요</code></pre>
             <div id="resultsSection" style="display:none; margin-top: 2rem;">
                 <h2>📊 실행 결과</h2>
