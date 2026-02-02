@@ -51,8 +51,8 @@ tabs.forEach(tab => {
 });
 
 const copyBtn = document.getElementById('copyCodeBtn');
-const iconCopy = copyBtn.querySelector('.icon-copy');
-const iconCheck = copyBtn.querySelector('.icon-check');
+const iconCopy = copyBtn.querySelector('.copy-icon');
+const iconCheck = copyBtn.querySelector('.check-icon');
 
 copyBtn.addEventListener('click', async () => {
     const codeText = ui.generatedCode.textContent; // 현재 생성된 코드 가져오기
@@ -64,7 +64,6 @@ copyBtn.addEventListener('click', async () => {
         // 아이콘 변경 (복사 -> 체크)
         iconCopy.style.display = 'none';
         iconCheck.style.display = 'inline';
-        copyBtn.style.borderColor = 'var(--success-color)'; // 테두리 초록색으로 변경
         
         // 2초 후 원래대로 복귀
         setTimeout(() => {
