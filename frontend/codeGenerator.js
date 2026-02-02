@@ -32,6 +32,23 @@ class FEniCSCodeGenerator {
         };
     }
 
+    /**
+     * 문자열 내의 j가 문자나 숫자와 붙어있는지 확인하는 함수
+     * @param {string} text - 검사할 문자열
+     * @returns {boolean} - j가 독립적이면 true, 문자/숫자와 붙어있으면 false
+     */
+    isJStandalone(text) {
+        // 정규식 설명:
+        // [a-zA-Z0-9]j : 영문자나 숫자 바로 뒤에 j가 오는 경우 (예: aj, 1j)
+        // |            : 또는
+        // j[a-zA-Z0-9] : j 바로 뒤에 영문자나 숫자가 오는 경우 (예: ja, j1)
+        // i 플래그      : 대소문자 무시 (J도 포함)
+        const attachedPattern = /[a-zA-Z0-9]j|j[a-zA-Z0-9]/i;
+
+        // 패턴이 발견되면(붙어있으면) false 반환, 아니면 true 반환
+        return !attachedPattern.test(text);
+    }
+
     generate(config) {
         /*
         config = {
