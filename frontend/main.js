@@ -55,7 +55,8 @@ const iconCopy = copyBtn.querySelector('.copy-icon');
 const iconCheck = copyBtn.querySelector('.check-icon');
 
 copyBtn.addEventListener('click', async () => {
-    const codeText = ui.generatedCode.textContent; // 현재 생성된 코드 가져오기
+    const codeElement = document.querySelector('#generatedCode code');
+    const codeText = codeElement ? codeElement.textContent : document.getElementById('generatedCode').textContent;
     
     try {
         // 클립보드에 텍스트 복사
