@@ -1,59 +1,4 @@
-/* style.css - Modern FEniCSx UI with Dark/Light Mode */
-
-/* =========================================
-   1. CSS Variables & Theme Setup
-   ========================================= */
-:root {
-    /* --- 공통 변수 --- */
-    --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%); /* Violet to Pink */
-    --success-color: #10b981;
-    --error-color: #ef4444;
-    --transition-speed: 0.3s;
-    
-    /* --- Dark Mode (기본) --- */
-    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); /* Deep Slate to Indigo */
-    --panel-bg: rgba(30, 41, 59, 0.6);
-    --panel-border: rgba(148, 163, 184, 0.1);
-    
-    --text-main: #f8fafc;       /* Slate 50 */
-    --text-muted: #94a3b8;      /* Slate 400 */
-    --text-accent: #c084fc;     /* Purple 400 */
-    
-    --input-bg: rgba(15, 23, 42, 0.6);
-    --input-border: rgba(148, 163, 184, 0.2);
-    --input-focus-border: #a855f7;
-    
-    --code-bg: #0b1120;
-    --code-text: #e2e8f0;
-
-    --scrollbar-track: rgba(15, 23, 42, 0.5);
-    --scrollbar-thumb: #475569;
-}
-
-/* --- Light Mode Overrides --- */
-body.light-mode {
-    --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%); /* Light Sky to Indigo */
-    --panel-bg: rgba(255, 255, 255, 0.75);
-    --panel-border: rgba(255, 255, 255, 0.6);
-    
-    --text-main: #1e293b;       /* Slate 800 */
-    --text-muted: #64748b;      /* Slate 500 */
-    --text-accent: #7c3aed;     /* Violet 600 */
-    
-    --input-bg: rgba(255, 255, 255, 0.9);
-    --input-border: #cbd5e1;    /* Slate 300 */
-    --input-focus-border: #7c3aed;
-    
-    --code-bg: #f1f5f9;         /* Slate 100 */
-    --code-text: #334155;       /* Slate 700 */
-
-    --scrollbar-track: rgba(203, 213, 225, 0.5);
-    --scrollbar-thumb: #94a3b8;
-}
-
-/* =========================================
-   2. Global Reset & Layout
-   ========================================= */
+/* style.css */
 * {
     margin: 0;
     padding: 0;
@@ -61,95 +6,42 @@ body.light-mode {
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg-gradient);
-    background-attachment: fixed; /* 배경 고정 */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #581c87 50%, #0f172a 100%);
     min-height: 100vh;
     padding: 2rem;
-    color: var(--text-main);
-    line-height: 1.6;
-    transition: color var(--transition-speed), background var(--transition-speed);
+    color: #fff;
 }
 
 .container {
-    max-width: 1600px; /* 넓은 화면 활용 */
+    max-width: 1400px;
     margin: 0 auto;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
-}
-
-/* =========================================
-   3. Header & Theme Toggle
-   ========================================= */
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    text-align: center;
     margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--panel-border);
 }
 
 .header h1 {
     font-size: 2.5rem;
-    font-weight: 800;
-    margin-bottom: 0.25rem;
-    background: linear-gradient(to right, var(--text-main), var(--text-accent));
+    margin-bottom: 0.5rem;
+    background: linear-gradient(to right, #fff, #c084fc);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.02em;
+    background-clip: text;
 }
 
 .header p {
-    color: var(--text-muted);
+    color: #d8b4fe;
     font-size: 1.1rem;
 }
 
-/* Theme Toggle Button */
-.theme-btn {
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    color: var(--text-main);
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(4px);
-}
-
-.theme-btn:hover {
-    transform: rotate(15deg) scale(1.1);
-    background: var(--input-border);
-}
-
-/* =========================================
-   4. Main Grid Layout
-   ========================================= */
 .main-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; 
-    gap: 2rem;
-    align-items: start;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 @media (max-width: 1024px) {
@@ -158,75 +50,335 @@ body {
     }
 }
 
-/* =========================================
-   5. Panels (Glassmorphism)
-   ========================================= */
 .panel {
-    background: var(--panel-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 1.5rem;
-    padding: 2rem;
-    border: 1px solid var(--panel-border);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-    transition: background var(--transition-speed), border-color var(--transition-speed);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .panel h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.5rem;
     margin-bottom: 1.5rem;
-    color: var(--text-main);
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--panel-border);
 }
 
-.sub-panel {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid var(--panel-border);
-}
-body.light-mode .sub-panel {
-    background: rgba(255, 255, 255, 0.4);
-}
-
-.divider {
-    border: 0;
-    height: 1px;
-    background: var(--panel-border);
-    margin: 2rem 0;
-}
-
-/* =========================================
-   6. Form Elements
-   ========================================= */
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+.icon {
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 .form-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-group label {
     display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #d8b4fe;
     margin-bottom: 0.5rem;
 }
 
-input[type="text"],
-input[type="number"],
-select,
-textarea {
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    color: #fff;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+}
+
+.form-group input[type="text"]::placeholder {
+    color: #c084fc;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #d8b4fe;
+}
+
+.slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #a855f7;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #a855f7;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(to right, #9333ea, #ec4899);
+    border: none;
+    border-radius: 0.5rem;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to right, #7c3aed, #db2777);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(147, 51, 234, 0.3);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-success {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #10b981;
+    border: none;
+    border-radius: 0.5rem;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+    margin-bottom: 1rem;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.info-box {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-box h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #d8b4fe;
+    margin-bottom: 0.5rem;
+}
+
+.equation-display {
+    font-family: 'Courier New', monospace;
+    color: #fff;
+    font-size: 0.875rem;
+}
+
+.equation-display div {
+    margin: 0.25rem 0;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.alert-error {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+}
+
+.alert-info {
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    color: #93c5fd;
+    font-size: 0.875rem;
+}
+
+.alert-info ol {
+    margin-left: 1.25rem;
+    margin-top: 0.5rem;
+}
+
+.alert-info li {
+    margin: 0.25rem 0;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.result-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+.result-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.result-label {
+    color: #d8b4fe;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.result-value {
+    color: #fff;
+    font-size: 1.5rem;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.result-value-lg {
+    color: #fff;
+    font-size: 1.25rem;
+    font-family: 'Courier New', monospace;
+}
+
+.file-list {
+    margin-top: 0.5rem;
+}
+
+.file-item {
+    color: #fff;
+    font-size: 0.875rem;
+    font-family: 'Courier New', monospace;
+    margin: 0.25rem 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #d8b4fe;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.code-panel pre {
+    background: #0f172a;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-panel code {
+    color: #86efac;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    background: #1e293b; color: #fff;
+    width: 800px; max-width: 95%;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    display: flex; flex-direction: column;
+}
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.close-modal {
+    background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer;
+}
+.modal-body {
+    padding: 1.5rem;
+    display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem;
+    height: 400px;
+}
+.coordinate-list {
+    overflow-y: auto; max-height: 300px; padding-right: 5px;
+}
+.coord-row {
+    display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 8px;
+}
+.coord-row input {
+    width: 100%; padding: 5px; background: rgba(255,255,255,0.1); border: 1px solid #555; color: white; border-radius: 4px;
+}
+.remove-pt {
+    background: #ef4444; border: none; color: white; border-radius: 4px; cursor: pointer; padding: 0 10px;
+}
+.chart-section {
+    background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px;
+    display: flex; justify-content: center; align-items: center;
+}
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex; justify-content: flex-end; gap: 10px;
+}
+select {
     width: 100%;
     padding: 0.75rem 1rem;
     background: var(--input-bg);
@@ -237,339 +389,58 @@ textarea {
     font-family: inherit;
     transition: all 0.2s ease;
 }
-
-/* Focus Effects */
-input:focus, select:focus, textarea:focus {
+select:focus {
     outline: none;
     border-color: var(--input-focus-border);
     box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
 }
+/* 스크롤바 커스텀 */
+.coordinate-list::-webkit-scrollbar { width: 6px; }
+.coordinate-list::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
 
-input::placeholder {
-    color: var(--text-muted);
-    opacity: 0.7;
-}
-
-small {
-    display: block;
-    margin-top: 0.4rem;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-}
-
-/* Checkbox */
-.checkbox-group {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
-    cursor: pointer;
-    accent-color: var(--input-focus-border);
-}
-
-/* Code Textarea */
-textarea {
-    font-family: 'JetBrains Mono', monospace;
-    line-height: 1.5;
-    min-height: 80px;
-}
-
-/* =========================================
-   7. Buttons
-   ========================================= */
-.btn-primary, .btn-success {
-    /* 1. 비율 및 크기 설정 (약 4:1 비율) */
-    width: 240px;       /* 너비 */
-    height: 60px;       /* 높이 */
-    min-width: 200px;   /* 최소 너비 보장 */
-    
-    /* 2. 중앙 정렬 */
-    margin: 1.5rem auto; /* 위아래 여백, 좌우 자동(중앙) */
-    display: flex;       /* Flexbox로 내부 텍스트 정렬 */
-    align-items: center;
-    justify-content: center;
-    
-    /* 3. 디자인 */
-    border: none;
-    border-radius: 0.75rem; /* 모서리 둥글게 */
-    font-size: 1.1rem;      /* 글자 크기 살짝 키움 */
-    font-weight: 700;
-    cursor: pointer;
-    gap: 0.75rem;
-    transition: all 0.2s ease;
-    
-    /* 텍스트 줄바꿈 방지 */
-    white-space: nowrap; 
-}
-
-/* 생성 버튼 (보라색 그라데이션) */
-.btn-primary {
-    background: var(--primary-gradient);
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
-}
-
-/* 다운로드 버튼 (초록색) */
-.btn-success {
-    background: var(--success-color);
-    color: white;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-}
-
-.btn-success:hover {
-    background: #059669;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
-}
-
-/* 아이콘 버튼 (오른쪽 패널의 작은 아이콘들 등)은 영향받지 않게 */
-.btn-icon {
-    width: auto;
-    height: auto;
-    padding: 0.5rem 0.8rem;
-    display: inline-flex;
-    margin: 0;
-}
-.btn-icon:hover { background: var(--panel-border); }
-
-/* =========================================
-   8. Tabs & Output Panel
-   ========================================= */
-.nav-tabs {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--panel-border);
-}
-
-.nav-tab {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1rem;
-    font-weight: 600;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    position: relative;
-    transition: color 0.3s;
-}
-
-.nav-tab:hover {
-    color: var(--text-main);
-}
-
-.nav-tab.active {
-    color: var(--text-accent);
-}
-
-.nav-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -17px; /* border-bottom 위치에 맞춤 */
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: var(--text-accent);
-    border-radius: 3px 3px 0 0;
-}
-
-/* Code Display */
-.code-panel pre {
-    background: var(--code-bg);
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    overflow-x: auto;
-    border: 1px solid var(--panel-border);
-    max-height: 600px;
-}
-
-.code-panel code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
-    color: var(--code-text);
-}
-
-/* =========================================
-   9. Results Dashboard
-   ========================================= */
-.results-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.result-card {
-    background: var(--input-bg);
-    padding: 1.25rem;
-    border-radius: 0.75rem;
-    border: 1px solid var(--panel-border);
-    text-align: center;
-}
-
-.result-card.full-width {
-    grid-column: 1 / -1;
-    text-align: left;
-}
-
-.result-label {
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-}
-
-.result-value, .result-value-lg {
-    color: var(--text-main);
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-}
-
-.result-value { font-size: 1.25rem; }
-.result-value-lg { font-size: 1rem; word-break: break-all;}
-
-.file-list {
-    margin-top: 1rem;
-}
-.file-item {
-    background: var(--input-bg);
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--text-main);
-    border: 1px solid var(--panel-border);
-}
-
-.info-box {
-    margin-top: 1.5rem;
-    padding: 1rem;
-    background: rgba(var(--text-accent), 0.1);
-    border-radius: 0.75rem;
-}
-.info-box h3 {
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    color: var(--text-main);
-}
-
-/* Alerts */
-.alert {
-    padding: 1rem;
-    border-radius: 0.75rem;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-.alert-error {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
-}
-body.light-mode .alert-error {
-    color: #dc2626;
-    background: #fee2e2;
-}
-
-/* =========================================
-   10. Modal & Utility
-   ========================================= */
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
-
-.modal-content {
-    background: #1e293b; /* 모달은 다크 테마 고정 or 변수 사용 */
-    background: var(--panel-bg);
-    color: var(--text-main);
-    width: 800px;
-    max-width: 90%;
-    border-radius: 1rem;
-    border: 1px solid var(--panel-border);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    display: flex;
-    flex-direction: column;
-}
-body.light-mode .modal-content {
-    background: #fff;
-}
-
-.modal-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--panel-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.close-modal {
-    background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);
-}
-
-.modal-body {
-    padding: 2rem;
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    gap: 2rem;
-}
-
-.chart-section {
-    background: var(--code-bg);
-    border-radius: 0.5rem;
-    border: 1px solid var(--panel-border);
-    position: relative;
-}
-
-.modal-footer {
-    padding: 1.5rem;
-    border-top: 1px solid var(--panel-border);
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-}
-
-.btn-secondary {
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
-    color: var(--text-main);
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-}
-.btn-secondary:hover { background: var(--panel-border); }
-
-/* Loading Spinner */
-.spinner {
-    width: 2rem;
-    height: 2rem;
-    border: 3px solid var(--panel-border);
-    border-top-color: var(--text-accent);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Coord Inputs Layout */
-.coord-inputs {
-    display: flex;
-    gap: 0.5rem;
-}
+.form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #a855f7;
+        }
+        #generatedCode {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: #d8b4fe;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(168, 85, 247, 0.3);
+            color: #fff;
+        }
