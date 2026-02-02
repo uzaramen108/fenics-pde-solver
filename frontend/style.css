@@ -668,3 +668,61 @@ body.light-mode .chart-section {
         min-height: 250px;
     }
 }
+
+/* =========================================
+   [수정] 체크박스와 라벨 한 줄 정렬
+   ========================================= */
+.checkbox-group {
+    display: flex;          /* 플렉스 박스 적용 (가로 배치) */
+    align-items: center;    /* 세로 기준 중앙 정렬 */
+    gap: 0.75rem;           /* 체크박스와 글자 사이 간격 */
+    margin-bottom: 1.5rem;  /* 아래 여백 */
+    width: 100%;            /* 너비 확보 */
+}
+
+/* 체크박스 옆의 라벨은 줄바꿈 되지 않도록 설정 */
+.checkbox-group label {
+    display: inline-block;  /* block 대신 inline-block 사용 */
+    margin-bottom: 0;       /* 라벨 아래 여백 제거 */
+    cursor: pointer;        /* 마우스 올리면 손가락 모양 */
+    width: auto;            /* 너비 자동 */
+}
+
+/* 체크박스 크기 미세 조정 */
+.checkbox-group input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;              /* 기본 마진 제거 */
+    cursor: pointer;
+}
+
+
+/* =========================================
+   [수정] 코드 패널 헤더 (제목 + 복사버튼) 정렬
+   ========================================= */
+.code-header {
+    display: flex;
+    justify-content: space-between; /* 제목은 왼쪽, 버튼은 오른쪽 끝으로 */
+    align-items: center;            /* 세로 중앙 정렬 */
+    width: 100%;                    /* 너비 100% */
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+.code-header h2 {
+    margin: 0;          /* h2의 기본 마진 제거 */
+    font-size: 1.1rem;
+    line-height: 1;     /* 줄 높이 조정 */
+}
+
+/* 복사 버튼 위치 보정 */
+#copyCodeBtn {
+    margin: 0;          /* 불필요한 마진 제거 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;       /* 버튼 높이 고정 */
+    width: 36px;        /* 버튼 너비 고정 (정사각형) */
+    padding: 0;
+}
