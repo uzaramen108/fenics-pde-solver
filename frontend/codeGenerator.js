@@ -63,15 +63,21 @@ class FEniCSCodeGenerator {
      * @returns {boolean} - j가 독립적이면 true, 문자/숫자와 붙어있으면 false
      */
     isJStandalone(text) {
-        // 정규식 설명:
-        // [a-zA-Z0-9]j : 영문자나 숫자 바로 뒤에 j가 오는 경우 (예: aj, 1j)
-        // |            : 또는
-        // j[a-zA-Z0-9] : j 바로 뒤에 영문자나 숫자가 오는 경우 (예: ja, j1)
-        // i 플래그      : 대소문자 무시 (J도 포함)
-        const attachedPattern = /[a-zA-Z0-9]j|j[a-zA-Z0-9]/i;
+        if (!text) return false;
 
-        // 패턴이 발견되면(붙어있으면) false 반환, 아니면 true 반환
-        return !attachedPattern.test(text);
+        // 1. j가 아예 없으면 false 반환
+        if (!text.toLowerCase().includes('j')) {
+            return false;
+        }
+
+        // 2. j가 영문자(a-z, A-Z) 바로 앞이나 뒤에 붙어있는지 검사
+        // [a-z]j : aj, bj, oj ... (변수명처럼 보임)
+        // j[a-z] : ja, jb, jo ... (변수명처럼 보임)
+        // (숫자 0-9는 정규식에서 뺐으므로 1j, 2j 등은 이 패턴에 걸리지 않음 -> 통과)
+        const attachedToLetterPattern = /[a-zA-Z]j|j[a-zA-Z]/i;
+
+        // 영문자와 붙어있다면(변수명이면) false, 아니면(독립적이거나 숫자 옆이면) true
+        return !attachedToLetterPattern.test(text);
     }
 
     /**
