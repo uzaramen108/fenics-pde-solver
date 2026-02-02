@@ -1,4 +1,4 @@
-// advanced.js - 고급 UI 로직
+// main.js - 고급 UI 로직
 
 const generator = new FEniCSCodeGenerator();
 let currentExecutionId = null;
