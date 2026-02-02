@@ -704,6 +704,7 @@ body.light-mode .chart-section {
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
+    width: 60px;
 }
 
 .copy-btn:hover {
@@ -744,4 +745,34 @@ body.light-mode .copy-btn:hover {
 body.light-mode .copy-btn.copied {
     background: rgba(16, 185, 129, 0.15);
     border-color: rgba(16, 185, 129, 0.3);
+}
+footer {
+  grid-column: 1 / -1; /* 그리드 전체 너비 사용 (가로 꽉 채우기) */
+  text-align: center; /* 텍스트 가운데 정렬 */
+  margin-top: 50px; /* 위쪽 콘텐츠와 간격 띄우기 */
+  padding-top: 20px; /* 내부 여백 */
+  padding-bottom: 20px;
+  border-top: 1px solid #ddd; /* 위쪽에 얇은 회색 줄 그리기 */
+  color: #777; /* 글자색은 너무 튀지 않게 회색으로 */
+  font-size: 0.9rem; /* 본문보다 약간 작게 */
+}
+
+footer p {
+  margin: 5px 0; /* 줄 간격 조정 */
+}
+
+footer a {
+  color: #333; /* 링크 색상 */
+  text-decoration: none;
+  font-weight: bold;
+}
+
+footer a:hover {
+  color: #007bff; /* 마우스 올리면 파란색 */
+  text-decoration: underline;
+}
+
+.copyright {
+  font-size: 0.8rem;
+  color: #999;
 }
