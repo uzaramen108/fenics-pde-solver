@@ -4,6 +4,9 @@ class FEniCSCodeGenerator {
     constructor() {
         this.version = '0.10.0';
         this.isComplexProblem = false;
+    }
+
+    DetectComplexProblem(config) {
         if (config.equation.type === 'poisson') {
             if (this.isJStandalone(config.equation.params.source)) {
                 this.isComplexProblem = true;
@@ -109,7 +112,7 @@ class FEniCSCodeGenerator {
             exactSolution: '1 + x[0]**2 + 2*x[1]**2' (optional)
         }
         */
-
+        this.DetectComplexProblem(config);
         let code = this.generateHeader(config.equation);
         code += this.generateTimeSet(config.equation);
         code += this.generateGmshMesh(config.dimension, config.mesh);
