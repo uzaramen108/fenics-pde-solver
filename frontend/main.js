@@ -3,6 +3,53 @@
 const generator = new FEniCSCodeGenerator();
 let currentExecutionId = null;
 
+const themeToggleBtn = document.getElementById('themeToggle');
+const iconSun = themeToggleBtn.querySelector('.icon-sun');
+const iconMoon = themeToggleBtn.querySelector('.icon-moon');
+
+// 초기 테마 설정 (localStorage 확인)
+const savedTheme = localStorage.getItem('theme') || 'dark';
+if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+    iconSun.style.display = 'none';
+    iconMoon.style.display = 'inline';
+}
+
+themeToggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('light-mode');
+    
+    const isLight = document.body.classList.contains('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    
+    // 아이콘 토글
+    iconSun.style.display = isLight ? 'none' : 'inline';
+    iconMoon.style.display = isLight ? 'inline' : 'none';
+});
+
+const tabs = document.querySelectorAll('.nav-tab');
+const tabContents = document.querySelectorAll('.tab-content');
+
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        // 활성 탭 스타일
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // 콘텐츠 표시
+        const target = tab.dataset.tab;
+        tabContents.forEach(content => {
+            content.style.display = (content.id === `tab-${target}`) ? 'block' : 'none';
+        });
+
+        // 탭이 'result'일 때 active 클래스 추가 (CSS 제어용)
+        if(target === 'result') {
+            document.getElementById('tab-result').classList.add('active');
+        } else {
+            document.getElementById('tab-result').classList.remove('active');
+        }
+    });
+});
+
 // UI 요소
 const $ = (id) => document.getElementById(id);
 
