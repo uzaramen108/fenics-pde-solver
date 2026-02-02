@@ -50,6 +50,35 @@ tabs.forEach(tab => {
     });
 });
 
+const copyBtn = document.getElementById('copyCodeBtn');
+const iconCopy = copyBtn.querySelector('.icon-copy');
+const iconCheck = copyBtn.querySelector('.icon-check');
+
+copyBtn.addEventListener('click', async () => {
+    const codeText = ui.generatedCode.textContent; // 현재 생성된 코드 가져오기
+    
+    try {
+        // 클립보드에 텍스트 복사
+        await navigator.clipboard.writeText(codeText);
+        
+        // 아이콘 변경 (복사 -> 체크)
+        iconCopy.style.display = 'none';
+        iconCheck.style.display = 'inline';
+        copyBtn.style.borderColor = 'var(--success-color)'; // 테두리 초록색으로 변경
+        
+        // 2초 후 원래대로 복귀
+        setTimeout(() => {
+            iconCopy.style.display = 'inline';
+            iconCheck.style.display = 'none';
+            copyBtn.style.borderColor = ''; // 테두리 색상 초기화
+        }, 2000);
+        
+    } catch (err) {
+        console.error('복사 실패:', err);
+        alert('코드를 복사하는 중 오류가 발생했습니다.');
+    }
+});
+
 // UI 요소
 const $ = (id) => document.getElementById(id);
 
