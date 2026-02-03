@@ -297,6 +297,7 @@ x = ufl.SpatialCoordinate(domain)
         if (equation.type === 'heat' || (equation.type === 'custom' && equation.params.time_dependent)) {
             const initial = equation.params.initial || 0;
             const safeInitial = this._wrapExpr(initial);
+            const safeExpression = this._wrapExpr(expression);
             code +=`
 u_n = fem.Function(V, name="u_n")
 u_n.interpolate(lambda x: ${safeInitial})
@@ -305,11 +306,12 @@ uh = fem.Function(V, name="u")
 uh.x.array[:] = u_n.x.array
 
 uD = fem.Function(V)
+uD.interpolate(lambda x: ${safeExpression})
 `;
         } else {
             code +=`
 uD = fem.Function(V)
-uD.interpolate(lambda x: ${expression})
+uD.interpolate(lambda x: ${safeExpression})
 `;
         }
 
