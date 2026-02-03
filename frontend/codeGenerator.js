@@ -11,6 +11,12 @@ class FEniCSCodeGenerator {
         }
         return `np.full(x.shape[1], ${expr})`;
     }
+    _wrapExprForSource(expr) {
+        if (!String(expr).includes('x[')) {
+            return `fem.Constant(domain, default_scalar_type(${expr}))`;
+        }
+        return expr;
+    }
 
     generate(config) {
         /*
@@ -358,7 +364,7 @@ v = ufl.TestFunction(V)
         if (type === 'poisson') {
             const source = params.source || 0;
             code += `# Poisson: -∇²u = f
-f = fem.Constant(domain, default_scalar_type(${source}))
+f = ${this._wrapExprForSource(source)}
 
 a = ufl.dot(ufl.grad(u), ufl.grad(v)) * ufl.dx
 L = f * v * ufl.dx
@@ -372,7 +378,7 @@ L = f * v * ufl.dx
             const safeInitial = this._wrapExpr(initial); // 추후 변경 예정(불균일 배경)
 
             code += `# Heat: ∂u/∂t - ∇²u = f (Backward Euler)
-f = fem.Constant(domain, default_scalar_type(${source}))
+f = ${this._wrapExprForSource(source)}
 dt = ${dt}
 t = 0.0
 T = ${T}
@@ -388,7 +394,7 @@ L = (u_n / dt + f) * v * ufl.dx
             const source = params.source || 0;
             const k = params.k || 1.0;
             code += `# Helmholtz: -∇²u + k²u = f
-f = fem.Constant(domain, default_scalar_type(${source}))
+f = ${this._wrapExprForSource(source)}
 k = fem.Constant(domain, default_scalar_type(${k}))
 
 a = (ufl.dot(ufl.grad(u), ufl.grad(v)) + k**2 * u * v) * ufl.dx
