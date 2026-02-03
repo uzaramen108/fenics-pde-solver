@@ -52,7 +52,7 @@ class FEniCSCodeGenerator {
         if (type === 'heat') {
             pass = false;
         } else if (type === 'custom') {
-            str = (params.custom_a || '') + (params.custom_L || '');
+            const str = (params.custom_a || '') + (params.custom_L || '');
             const conditionDt = /(?<![a-zA-Z])dt(?![a-zA-Z])/.test(str);
             const conditionT = /(?<![a-zA-Z])t(?![a-zA-Z])/.test(str);
             if (conditionDt || conditionT) {
