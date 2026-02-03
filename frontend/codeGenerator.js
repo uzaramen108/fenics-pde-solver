@@ -276,6 +276,7 @@ if mesh_comm.rank == 0:
 # Function Space
 # ============================================
 V = fem.functionspace(domain, ("${type}", ${degree}))
+x = ufl.SpatialCoordinate(domain)
 
 `;
     }
