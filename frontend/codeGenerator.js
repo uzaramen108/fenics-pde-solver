@@ -459,7 +459,7 @@ with io.XDMFFile(domain.comm, filename.with_suffix(".xdmf"), "w") as xdmf:
             loc.set(0)
         
         # 현재 스텝의 L_form으로 벡터 재조립
-        assemble_vector(b, L_form)
+        assemble_vector(L_form, b)
         
         # BC 적용
         apply_lifting(b, [a_form], [[bc]], x0=[uh.x.petsc_vec])
