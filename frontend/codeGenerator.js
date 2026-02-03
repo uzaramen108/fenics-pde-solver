@@ -12,10 +12,10 @@ class FEniCSCodeGenerator {
         return `np.full(x.shape[1], ${expr})`;
     }
     _wrapExprForSource(expr) {
-        if (!String(expr).includes('x[')) {
-            return `fem.Constant(domain, default_scalar_type(${expr}))`;
+        if (String(expr).includes('x[')) {
+            return expr;
         }
-        return expr;
+        return `fem.Constant(domain, default_scalar_type(${expr}))`;
     }
 
     generate(config) {
