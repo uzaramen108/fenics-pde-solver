@@ -118,6 +118,7 @@ const ui = {
     helmholtzSource: $('helmholtzSource'),
     // Custom
     customParams: $('customParams'),
+    customSource: $('customSource'),
     customA: $('customA'),
     customL: $('customL'),
     customTimeDep: $('customTimeDep'),
@@ -302,6 +303,7 @@ function collectConfig() {
         };
     } else if (eqType === 'custom') {
         config.equation.params = {
+            source: ui.customSource.value,
             custom_a: ui.customA.value,
             custom_L: ui.customL.value,
             time_dependent: ui.customTimeDep.checked,

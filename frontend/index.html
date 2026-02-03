@@ -223,12 +223,16 @@
                     </small>
                 </div>
                 <div class="form-group">
+                    <label for="customSource">소스 함수 f</label>
+                    <input type="text" id="customSource" value="-6" placeholder="-6">
+                </div>
+                <div class="form-group">
                     <label for="customA">a (bilinear form)</label>
                     <textarea id="customA" rows="3" 
                               placeholder="a = ufl.dot(ufl.grad(u), ufl.grad(v)) * ufl.dx"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="customL">L (linear form)</label>
+                    <label for="customL">L (linear form), must include "f"</label>
                     <textarea id="customL" rows="3" 
                               placeholder="L = f * v * ufl.dx"></textarea>
                 </div>

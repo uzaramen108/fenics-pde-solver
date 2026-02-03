@@ -406,7 +406,7 @@ L = f * v * ufl.dx
             const source = params.source || 0;
             // custom
             code += `# Custom weak form
-f = fem.Constant(domain, default_scalar_type(${source}))
+f = ${this._wrapExprForSource(source)}
 ${params.custom_a || 'a = ufl.dot(ufl.grad(u), ufl.grad(v)) * ufl.dx'}
 ${params.custom_L || 'L = fem.Constant(domain, default_scalar_type(0)) * v * ufl.dx'}
 `;
