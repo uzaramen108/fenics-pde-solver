@@ -776,3 +776,66 @@ footer a:hover {
   font-size: 0.8rem;
   color: #999;
 }
+/* 동적 리스트 스타일 */
+.dynamic-list {
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 5px;
+    border: 1px solid #334155;
+}
+
+.dynamic-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.dynamic-row:last-child {
+    margin-bottom: 0;
+}
+
+.dynamic-row input {
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.dynamic-row .var-name {
+    width: 30%; /* 이름 필드는 짧게 */
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.dynamic-row .var-value {
+    width: 60%; /* 값 필드는 길게 */
+}
+
+/* 삭제 버튼 (X) */
+.btn-remove {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #ef4444;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.btn-remove:hover {
+    background: #dc2626;
+}
+
+/* 추가 버튼 (작게) */
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+}

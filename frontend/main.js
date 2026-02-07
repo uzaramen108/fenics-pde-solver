@@ -1,6 +1,22 @@
 // main.js - 고급 UI 로직
 
-const generator = new FEniCSCodeGenerator();
+if (eqType === 'custom') {
+    if (time_dependent) {
+        if (pdeType === 'nonlinear') {
+            const generator = new TimeDependentNonlinearGenerator();
+        } else {
+            const generator = new TimeDependentLinearGenerator();
+        }
+    } else {
+        if (pdeType === 'nonlinear') {
+            const generator = new SteadyNonlinearGenerator;
+        } else {
+            const generator = new SteadyLinearGenerator();
+        }
+    }   
+} else {
+    const generator = new FEniCSCodeGeneratorBase();
+}
 let currentExecutionId = null;
 
 const themeToggleBtn = document.getElementById('themeToggle');
@@ -116,15 +132,21 @@ const ui = {
     helmholtzParams: $('helmholtzParams'),
     helmholtzK: $('helmholtzK'),
     helmholtzSource: $('helmholtzSource'),
-    // Custom
+    // Custom PDE 관련 (Hidden Fields 추가됨)
     customParams: $('customParams'),
     customSource: $('customSource'),
-    customA: $('customA'),
-    customL: $('customL'),
     customTimeDep: $('customTimeDep'),
     customTimeGroup: $('customTimeGroup'),
     customT: $('customT'),
     customDt: $('customDt'),
+    
+    // 👇 새로 추가된 Hidden Fields 연결
+    customPdeType: $('customPdeType'),     // linear or nonlinear
+    customConstants: $('customConstants'), // JSON string
+    customFunctions: $('customFunctions'), // JSON string
+    customA: $('customA'),                 // bilinear form
+    customL: $('customL'),                 // linear form
+    customF: $('customF'),                 // nonlinear form total,
     // Exact solution
     hasExactSolution: $('hasExactSolution'),
     exactSolution: $('exactSolution'),
@@ -302,10 +324,36 @@ function collectConfig() {
             k: ui.helmholtzK.value
         };
     } else if (eqType === 'custom') {
+        // 👇 [수정됨] 사용자 정의 PDE 설정 수집
+        
+        // 1. JSON 문자열로 저장된 상수/함수 목록 파싱
+        let constants = [];
+        let functions = [];
+        try {
+            constants = JSON.parse(ui.customConstants.value || "[]");
+            functions = JSON.parse(ui.customFunctions.value || "[]");
+        } catch (e) {
+            console.error("JSON Parse Error:", e);
+        }
+
         config.equation.params = {
             source: ui.customSource.value,
+            
+            // 선형/비선형 타입
+            pdeType: ui.customPdeType.value, // 'linear' or 'nonlinear'
+            
+            // 동적 변수 목록
+            constants: constants,
+            functions: functions,
+
+            // 수식 (linear)
             custom_a: ui.customA.value,
             custom_L: ui.customL.value,
+            
+            // 수식 (nonlinear)
+            custom_F: ui.customF.value,
+
+            // 시간 의존성
             time_dependent: ui.customTimeDep.checked,
             T: parseFloat(ui.customT.value),
             dt: parseFloat(ui.customDt.value)
@@ -661,4 +709,121 @@ function initOrUpdateChart() {
         });
     }
 }
+window.addPdeItem = function(listId) {
+    const list = document.getElementById(listId);
+    const div = document.createElement('div');
+    div.className = 'dynamic-row';
+    
+    // 플레이스홀더 설정
+    const namePh = listId === 'constantList' ? '변수명 (a)' : '함수명 (g)';
+    const valPh = listId === 'constantList' ? '값 (1.0)' : '수식 (x[0]**2)';
 
+    div.innerHTML = `
+        <input type="text" placeholder="${namePh}" class="var-name">
+        <input type="text" placeholder="${valPh}" class="var-value">
+        <button class="btn-remove" onclick="removeRow(this)">&times;</button>
+    `;
+    list.appendChild(div);
+};
+
+window.removeRow = function(btn) {
+    btn.parentElement.remove();
+};
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. 모달 요소 가져오기
+    const pdeModal = document.getElementById('pdeModal');
+    const openPDEBtn = document.getElementById('openPDEModalBtn');
+    const closeButtons = document.querySelectorAll('.close-modal'); // 기존 버튼들과 공용 클래스 사용
+    const applyPDEBtn = document.getElementById('applyPDEBtn');
+
+    // 입력 필드 요소들
+    const radioLinear = document.querySelector('input[name="pdeLinearity"][value="linear"]');
+    const radioNonlinear = document.querySelector('input[name="pdeLinearity"][value="nonlinear"]');
+    const linearGroup = document.getElementById('linearInputGroup');
+    const nonlinearGroup = document.getElementById('nonlinearInputGroup');
+
+    // 모달 내부 텍스트 영역
+    const modalA = document.getElementById('modalFormA');
+    const modalL = document.getElementById('modalFormL');
+    const modalF = document.getElementById('modalFormF');
+
+    // 메인 화면 히든 필드 및 요약
+    const hiddenType = document.getElementById('customPdeType');
+    const hiddenA = document.getElementById('customA');
+    const hiddenL = document.getElementById('customL');
+    const hiddenF = document.getElementById('customF');
+    const pdeSummary = document.getElementById('pdeSummary');
+
+    // 2. 모달 열기
+    if (openPDEBtn) {
+        openPDEBtn.addEventListener('click', () => {
+            // 현재 저장된 값들을 모달에 불러오기
+            const currentType = hiddenType.value;
+            
+            if (currentType === 'linear') {
+                radioLinear.checked = true;
+                linearGroup.style.display = 'block';
+                nonlinearGroup.style.display = 'none';
+            } else {
+                radioNonlinear.checked = true;
+                linearGroup.style.display = 'none';
+                nonlinearGroup.style.display = 'block';
+            }
+
+            modalA.value = hiddenA.value;
+            modalL.value = hiddenL.value;
+            modalF.value = hiddenF.value;
+
+            pdeModal.style.display = 'flex';
+        });
+    }
+
+    // 3. 선형/비선형 라디오 버튼 토글 로직
+    const togglePdeInputs = () => {
+        if (radioLinear.checked) {
+            linearGroup.style.display = 'block';
+            nonlinearGroup.style.display = 'none';
+        } else {
+            linearGroup.style.display = 'none';
+            nonlinearGroup.style.display = 'block';
+        }
+    };
+
+    if(radioLinear && radioNonlinear) {
+        radioLinear.addEventListener('change', togglePdeInputs);
+        radioNonlinear.addEventListener('change', togglePdeInputs);
+    }
+
+    // 4. 모달 닫기 (공통 로직 사용 가능하지만 명시적으로 추가)
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetId = e.target.getAttribute('data-target');
+            if (targetId) {
+                document.getElementById(targetId).style.display = 'none';
+            } else {
+                // data-target이 없는 경우 가장 가까운 모달 닫기
+                e.target.closest('.modal-overlay').style.display = 'none';
+            }
+        });
+    });
+
+    // 5. 적용 완료 버튼 클릭
+    if (applyPDEBtn) {
+        applyPDEBtn.addEventListener('click', () => {
+            // 모달의 값을 히든 필드에 저장
+            if (radioLinear.checked) {
+                hiddenType.value = 'linear';
+                hiddenA.value = modalA.value;
+                hiddenL.value = modalL.value;
+                pdeSummary.innerHTML = `현재 설정: <strong>Linear</strong><br><small style="color:#64748b">a = ${modalA.value.substring(0, 20)}...</small>`;
+            } else {
+                hiddenType.value = 'nonlinear';
+                hiddenF.value = modalF.value;
+                pdeSummary.innerHTML = `현재 설정: <strong>Non-linear</strong><br><small style="color:#64748b">F = ${modalF.value.substring(0, 20)}...</small>`;
+            }
+
+            // 모달 닫기
+            pdeModal.style.display = 'none';
+        });
+    }
+});
