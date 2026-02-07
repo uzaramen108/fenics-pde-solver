@@ -361,7 +361,7 @@ async function generateAndExecute() {
         // 설정 수집
         const config = collectConfig();
         console.log('📋 Config:', config);
-        let generator = new FEniCSCodeGeneratorBase();
+        let generator = new FEniCSCodeGenerator();
         if (config.equation.type === 'custom') {
             if (config.equation.params.time_dependent) {
                 if (config.equation.params.pdeType === 'nonlinear') {
@@ -377,7 +377,7 @@ async function generateAndExecute() {
                 }
             }   
         } else {
-            generator = new FEniCSCodeGeneratorBase();
+            generator = new FEniCSCodeGenerator();
         }
         // 코드 생성
         const pythonCode = generator.generate(config);
