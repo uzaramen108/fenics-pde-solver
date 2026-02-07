@@ -1,22 +1,5 @@
 // main.js - 고급 UI 로직
 
-if (eqType === 'custom') {
-    if (time_dependent) {
-        if (pdeType === 'nonlinear') {
-            const generator = new TimeDependentNonlinearGenerator();
-        } else {
-            const generator = new TimeDependentLinearGenerator();
-        }
-    } else {
-        if (pdeType === 'nonlinear') {
-            const generator = new SteadyNonlinearGenerator;
-        } else {
-            const generator = new SteadyLinearGenerator();
-        }
-    }   
-} else {
-    const generator = new FEniCSCodeGeneratorBase();
-}
 let currentExecutionId = null;
 
 const themeToggleBtn = document.getElementById('themeToggle');
@@ -378,7 +361,24 @@ async function generateAndExecute() {
         // 설정 수집
         const config = collectConfig();
         console.log('📋 Config:', config);
-        
+        let generator = new FEniCSCodeGeneratorBase();
+        if (config.equation.type === 'custom') {
+            if (config.equation.params.time_dependent) {
+                if (config.equation.params.pdeType === 'nonlinear') {
+                    generator = new TimeDependentNonlinearGenerator();
+                } else {
+                    generator = new TimeDependentLinearGenerator();
+                }
+            } else {
+                if (config.equation.params.pdeType === 'nonlinear') {
+                    generator = new SteadyNonlinearGenerator();
+                } else {
+                    generator = new SteadyLinearGenerator();
+                }
+            }   
+        } else {
+            generator = new FEniCSCodeGeneratorBase();
+        }
         // 코드 생성
         const pythonCode = generator.generate(config);
         console.log('🐍 Generated code length:', pythonCode.length);
