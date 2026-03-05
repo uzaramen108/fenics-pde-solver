@@ -158,7 +158,7 @@ async def execute_code(request: CodeExecutionRequest):
         # 생성된 파일 목록
         generated_files = []
         if results_dir.exists():
-            generated_files = [f.name for f in results_dir.iterdir() if f.is_file()]
+            generated_files = [f.name for f in results_dir.iterdir()]
         
         result_data["generated_files"] = generated_files
         result_data["execution_id"] = execution_id
