@@ -1,20 +1,10 @@
-// 페이지 로드 시 config.js의 API URL을 가져와 입력창에 설정
-document.addEventListener('DOMContentLoaded', () => {
-    const apiUrlInput = document.getElementById('api-url');
-    if (window.APP_CONFIG && window.APP_CONFIG.API_URL) {
-        apiUrlInput.value = window.APP_CONFIG.API_URL;
-    } else {
-        apiUrlInput.value = "http://localhost:7860"; // fallback
-        console.warn("config.js를 불러오지 못했습니다. 기본값을 사용합니다.");
-    }
-});
-
+// 고정된 백엔드 API 주소
+const API_URL = 'https://uzaramen108-fenics-backend.hf.space';
 let currentExecutionId = null;
 
 document.getElementById('run-btn').addEventListener('click', async () => {
-    // 입력창의 주소를 최우선으로 사용 (끝의 슬래시 제거)
-    const apiUrl = document.getElementById('api-url').value.replace(/\/$/, ''); 
-    const code = document.getElementById('python-editor').value;
+    // ⚠️ 주의: HTML의 textarea id가 'python-code'인지 꼭 확인하세요!
+    const code = document.getElementById('python-code').value; 
     const runBtn = document.getElementById('run-btn');
     const statusText = document.getElementById('status-text');
     const stdoutBox = document.getElementById('stdout-box');
@@ -36,16 +26,16 @@ document.getElementById('run-btn').addEventListener('click', async () => {
     currentExecutionId = null;
 
     try {
-        console.log(`요청 전송: ${apiUrl}/api/execute`);
+        console.log(`요청 전송: ${API_URL}/api/execute`);
         
-        const response = await fetch(`${apiUrl}/api/execute`, {
+        const response = await fetch(`${API_URL}/api/execute`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ python_code: code })
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: 백엔드 서버(${apiUrl})와 통신할 수 없습니다.`);
+            throw new Error(`HTTP ${response.status}: 백엔드 서버(${API_URL})와 통신할 수 없습니다.`);
         }
 
         const data = await response.json();
@@ -74,8 +64,6 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 document.getElementById('download-btn').addEventListener('click', () => {
     if (!currentExecutionId) return;
     
-    const apiUrl = document.getElementById('api-url').value.replace(/\/$/, '');
-    const downloadUrl = `${apiUrl}/api/download/${currentExecutionId}`;
-    
+    const downloadUrl = `${API_URL}/api/download/${currentExecutionId}`;
     window.location.href = downloadUrl;
 });
