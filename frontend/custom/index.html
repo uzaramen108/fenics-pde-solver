@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>직접 실행 - FEniCSx Solver</title>
-    <link rel="stylesheet" href="../style.css"> <style>
+    <link rel="stylesheet" href="../style.css">
+    <style>
         .custom-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .config-bar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
         .config-bar input { flex-grow: 1; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #2a2a2a; color: white; }
@@ -22,7 +23,7 @@
         
         <div class="config-bar">
             <label>백엔드 API 주소:</label>
-            <input type="text" id="api-url" value="http://localhost:7860" placeholder="예: http://localhost:7860 또는 https://내스페이스.hf.space">
+            <input type="text" id="api-url" placeholder="config.js 로딩 중...">
         </div>
 
         <textarea id="python-editor" spellcheck="false" placeholder="# 여기에 FEniCSx 코드를 입력하세요.&#10;# 결과 파일은 Path('results') 에 저장되도록 작성해야 다운로드 가능합니다."></textarea>
@@ -41,7 +42,7 @@
         <button id="download-btn" class="btn btn-success">📦 결과 파일 다운로드 (.zip)</button>
     </div>
 
-    <script src="../config.js" onerror="console.log('config.js 로드 생략')"></script>
+    <script src="../config.js"></script>
     <script src="custom.js"></script>
 </body>
 </html>

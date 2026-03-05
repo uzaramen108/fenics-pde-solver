@@ -1,14 +1,19 @@
+// 페이지 로드 시 config.js의 API URL을 가져와 입력창에 설정
 document.addEventListener('DOMContentLoaded', () => {
-    // config.js가 로드되어 있다면 API URL 기본값 덮어쓰기
+    const apiUrlInput = document.getElementById('api-url');
     if (window.APP_CONFIG && window.APP_CONFIG.API_URL) {
-        document.getElementById('api-url').value = window.APP_CONFIG.API_URL;
+        apiUrlInput.value = window.APP_CONFIG.API_URL;
+    } else {
+        apiUrlInput.value = "http://localhost:7860"; // fallback
+        console.warn("config.js를 불러오지 못했습니다. 기본값을 사용합니다.");
     }
 });
 
 let currentExecutionId = null;
 
 document.getElementById('run-btn').addEventListener('click', async () => {
-    const apiUrl = document.getElementById('api-url').value.replace(/\/$/, ''); // 끝에 슬래시 제거
+    // 입력창의 주소를 최우선으로 사용 (끝의 슬래시 제거)
+    const apiUrl = document.getElementById('api-url').value.replace(/\/$/, ''); 
     const code = document.getElementById('python-editor').value;
     const runBtn = document.getElementById('run-btn');
     const statusText = document.getElementById('status-text');
@@ -31,15 +36,16 @@ document.getElementById('run-btn').addEventListener('click', async () => {
     currentExecutionId = null;
 
     try {
+        console.log(`요청 전송: ${apiUrl}/api/execute`);
+        
         const response = await fetch(`${apiUrl}/api/execute`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ python_code: code })
         });
 
-        // 405 에러 등 HTTP 에러 처리
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: 백엔드 서버를 찾을 수 없거나 통신이 거부되었습니다. (API 주소를 확인하세요)`);
+            throw new Error(`HTTP ${response.status}: 백엔드 서버(${apiUrl})와 통신할 수 없습니다.`);
         }
 
         const data = await response.json();
@@ -49,7 +55,7 @@ document.getElementById('run-btn').addEventListener('click', async () => {
         stdoutBox.textContent = data.stdout || "출력 내용이 없습니다.";
         stderrBox.textContent = data.stderr || "에러/경고가 없습니다.";
 
-        // 파일이 생성되었다면 다운로드 버튼 활성화
+        // 파일 생성 시 다운로드 버튼 활성화
         if (data.status === 'success' && data.result && data.result.generated_files && data.result.generated_files.length > 0) {
             currentExecutionId = data.execution_id;
             downloadBtn.style.display = "inline-block";
@@ -71,6 +77,5 @@ document.getElementById('download-btn').addEventListener('click', () => {
     const apiUrl = document.getElementById('api-url').value.replace(/\/$/, '');
     const downloadUrl = `${apiUrl}/api/download/${currentExecutionId}`;
     
-    // 브라우저를 통해 직접 다운로드 트리거
     window.location.href = downloadUrl;
 });
