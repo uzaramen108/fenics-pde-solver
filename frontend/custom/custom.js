@@ -20,7 +20,7 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 
     try {
         // 백엔드 URL이 다를 경우 (예: http://localhost:7860/api/execute) 전체 URL 입력 필요
-        const response = await fetch('/api/execute', {
+        const response = await fetch('http://localhost:7860/api/execute', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ python_code: code })
@@ -37,8 +37,7 @@ document.getElementById('run-btn').addEventListener('click', async () => {
         if (data.status === 'success' && data.result.generated_files && data.result.generated_files.length > 0) {
             downloadBtn.style.display = "block";
             downloadBtn.onclick = () => {
-                // 다운로드 엔드포인트 호출
-                window.location.href = `/api/download/${data.execution_id}`;
+                window.location.href = `http://localhost:7860/api/download/${data.execution_id}`;
             };
         }
     } catch (error) {
