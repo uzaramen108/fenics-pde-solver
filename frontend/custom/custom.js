@@ -19,7 +19,7 @@ document.getElementById('run-btn').addEventListener('click', async () => {
     // UI 초기화
     runBtn.disabled = true;
     runBtn.textContent = "⏳ 실행 중...";
-    statusText.textContent = "(최대 3분 소요될 수 있습니다)";
+    statusText.textContent = "(졸업시켜주세요...)";
     stdoutBox.textContent = "";
     stderrBox.textContent = "";
     downloadBtn.style.display = "none";

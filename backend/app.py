@@ -205,7 +205,7 @@ async def execute_code(request: CodeExecutionRequest):
 @app.get("/api/download/{execution_id}")
 async def download_results(execution_id: str):
     """
-    실행 결과 파일들을 ZIP으로 다운로드합니다.
+    실행 결과 파일들을 ZIP으로 다운로드합니다. (하위 폴더 구조 완벽 유지)
     """
     logger.info(f"📥 Download request for execution ID: {execution_id}")
     
@@ -214,22 +214,26 @@ async def download_results(execution_id: str):
         
         if not results_dir.exists():
             logger.error(f"❌ Results directory not found: {results_dir}")
-            raise HTTPException(status_code=404, detail="결과 파일을 찾을 수 없습니다.")
+            raise HTTPException(status_code=404, detail="결과 폴더를 찾을 수 없습니다.")
         
-        files = list(results_dir.glob("*"))
-        if not files:
-            raise HTTPException(status_code=404, detail="다운로드할 파일이 없습니다.")
+        # rglob('*')를 사용하여 .bp 폴더 안쪽의 하위 파일들까지 모두 수집
+        all_files = [f for f in results_dir.rglob('*') if f.is_file()]
+        
+        if not all_files:
+            raise HTTPException(status_code=404, detail="압축할 내용물이 없습니다.")
         
         # ZIP 파일 생성
         zip_path = Path(f"/tmp/results_{execution_id}.zip")
         
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for file in files:
-                if file.is_file():
-                    zipf.write(file, file.name)
-                    logger.debug(f"📦 Added to ZIP: {file.name}")
+            for file_path in all_files:
+                # results 폴더를 기준으로 상대 경로를 계산하여 압축 구조 유지
+                arcname = file_path.relative_to(results_dir)
+                # 안전하게 문자열(str)로 변환하여 압축
+                zipf.write(str(file_path), str(arcname))
+                logger.debug(f"📦 Added to ZIP: {arcname}")
         
-        logger.info(f"✅ ZIP created: {zip_path}")
+        logger.info(f"✅ ZIP created: {zip_path} (Size: {zip_path.stat().st_size} bytes)")
         
         return FileResponse(
             zip_path,
