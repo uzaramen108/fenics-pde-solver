@@ -4,7 +4,7 @@ let currentExecutionId = null;
 
 document.getElementById('run-btn').addEventListener('click', async () => {
     // ⚠️ 주의: HTML의 textarea id가 'python-code'인지 꼭 확인하세요!
-    const code = document.getElementById('python-code').value; 
+    const code = document.getElementById('python-editor').value;
     const runBtn = document.getElementById('run-btn');
     const statusText = document.getElementById('status-text');
     const stdoutBox = document.getElementById('stdout-box');
