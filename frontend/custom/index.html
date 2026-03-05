@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEniCSx Custom Code Executor</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        #python-code { width: 100%; height: 400px; font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; }
+        .output-box { background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; min-height: 50px; white-space: pre-wrap; border-radius: 5px; font-family: monospace; }
+        .error-box { background: #fff5f5; color: #e03131; border-color: #ffc9c9; }
+        #download-btn { display: none; margin-top: 15px; padding: 10px 20px; background: #228be6; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #download-btn:hover { background: #1c7ed6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FEniCSx Custom Solver</h1>
+        
+        <textarea id="python-code" spellcheck="false" placeholder="여기에 FEniCSx 파이썬 코드를 입력하세요...&#10;(결과 파일은 'results' 폴더 경로에 저장하도록 코드 작성)"></textarea>
+        <br>
+        <button id="run-btn" style="padding: 10px 20px; margin-top: 10px; cursor: pointer;">계산 실행</button>
+
+        <h3 id="status-text" style="margin-top: 20px;">대기 중...</h3>
+        
+        <h4>표준 출력 (Stdout):</h4>
+        <pre id="stdout-box" class="output-box"></pre>
+
+        <h4>에러 및 경고 (Stderr):</h4>
+        <pre id="stderr-box" class="output-box error-box"></pre>
+
+        <button id="download-btn">결과 파일 다운로드 (.zip)</button>
+    </div>
+
+    <script src="custom.js"></script>
+</body>
+</html>
