@@ -7,6 +7,7 @@ WORKDIR /app
 # 시스템 패키지 업데이트
 RUN apt-get update && apt-get install -y \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Python 패키지 설치

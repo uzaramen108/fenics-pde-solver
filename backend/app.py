@@ -120,7 +120,7 @@ async def execute_code(request: CodeExecutionRequest):
             ["python3", str(code_file)],
             capture_output=True,
             text=True,
-            timeout=180,  # 3분 타임아웃
+            timeout=18000,  # 300분 타임아웃
             cwd=work_dir,
             env={**os.environ, "PYTHONUNBUFFERED": "1"}
         )
@@ -183,8 +183,8 @@ async def execute_code(request: CodeExecutionRequest):
             status="timeout",
             result={"error": "Execution timeout"},
             stdout="",
-            stderr="Execution exceeded 180 seconds",
-            execution_time="180s+"
+            stderr="Execution exceeded 18000 seconds",
+            execution_time="18000s+"
         )
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}", exc_info=True)
