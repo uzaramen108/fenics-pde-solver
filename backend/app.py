@@ -172,26 +172,37 @@ async def stop_execution(execution_id: str):
 
 @app.get("/api/download/{execution_id}")
 async def download_results(execution_id: str):
-    """결과 다운로드 및 자동 폴더 삭제"""
-    results_dir = get_work_dir(execution_id) / "results"
+    """결과 다운로드 및 자동 폴더 삭제 (전체 작업 폴더 압축으로 개선)"""
+    work_dir = get_work_dir(execution_id)
     
-    if not results_dir.exists():
-        raise HTTPException(status_code=404, detail="결과 폴더를 찾을 수 없습니다.")
+    if not work_dir.exists():
+        raise HTTPException(status_code=404, detail="작업 폴더를 찾을 수 없습니다. (이미 삭제되었거나 존재하지 않음)")
     
-    all_files = [f for f in results_dir.rglob('*') if f.is_file()]
+    # 1. 다운로드 시점에 현재까지의 로그를 텍스트 파일로 저장하여 포함
+    status_data = read_status(execution_id)
+    if status_data:
+        (work_dir / "stdout_log.txt").write_text(status_data.get("stdout", "No output"), encoding="utf-8")
+        (work_dir / "stderr_log.txt").write_text(status_data.get("stderr", "No errors"), encoding="utf-8")
+    
+    # 2. 특정 폴더(results)만 고집하지 않고, 작업 폴더 내부의 모든 결과 파일을 수집
+    # 단, 실행 코드 원본과 상태 정보 파일은 제외
+    exclude_files = ["user_code.py", "status.json"]
+    all_files = [f for f in work_dir.rglob('*') if f.is_file() and f.name not in exclude_files]
+    
     if not all_files:
         raise HTTPException(status_code=404, detail="압축할 내용물이 없습니다.")
     
+    # 3. ZIP 파일 생성 (폴더 구조 유지)
     zip_path = Path(f"/tmp/results_{execution_id}.zip")
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for file_path in all_files:
-            arcname = file_path.relative_to(results_dir)
+            arcname = file_path.relative_to(work_dir)
             zipf.write(str(file_path), str(arcname))
             
-    # 다운로드 응답을 보낸 후 서버에서 파일을 삭제하기 위해 타이머 스레드 작동
+    # 4. 다운로드 전송 후 서버 용량 정리를 위한 삭제 스레드
     def cleanup_after_download():
-        time.sleep(10) # 다운로드 완료될 때까지 10초 대기
-        shutil.rmtree(get_work_dir(execution_id), ignore_errors=True)
+        time.sleep(15) # 다운로드 완료를 위한 충분한 대기 시간
+        shutil.rmtree(work_dir, ignore_errors=True)
         if zip_path.exists(): zip_path.unlink()
         logger.info(f"🗑️ Downloaded files deleted for ID: {execution_id}")
         

@@ -28,7 +28,8 @@ function updateUI(status) {
         runBtn.disabled = false; stopBtn.disabled = true; saveBtn.disabled = false;
     } else if (status === 'stopped' || status === 'error') {
         statusBadge.classList.add('bg-gray');
-        runBtn.disabled = false; stopBtn.disabled = true; saveBtn.disabled = false; // 에러여도 남은 로그 저장을 위해 활성화
+        // 에러나 중지 시에는 다운로드할 결과물이 없으므로 저장 버튼 비활성화!
+        runBtn.disabled = false; stopBtn.disabled = true; saveBtn.disabled = true; 
     }
 }
 
