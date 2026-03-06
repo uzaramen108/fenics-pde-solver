@@ -8,7 +8,7 @@
     <style>
         .custom-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .config-bar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
-        .config-bar input { flex-grow: 1; padding: 8px; width: 600px; border-radius: 4px; border: 1px solid #555; background: #2a2a2a; color: white; }
+        .config-bar input { flex-grow: 1; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #2a2a2a; color: white; }
         #python-editor { width: 100%; height: 500px; font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; border: 1px solid #444; }
         .output-box { background: #2d2d2d; padding: 15px; border: 1px solid #444; min-height: 100px; white-space: pre-wrap; border-radius: 5px; font-family: monospace; color: #fff; margin-top: 10px; max-height: 400px; overflow-y: auto;}
         .error-box { color: #ff6b6b; border-color: #ff6b6b; }
@@ -30,8 +30,8 @@
         
         <div class="config-bar">
             <label style="color: #69db7c;">실행 ID:</label>
-            <input type="text" id="exec-id-input" placeholder="비워두면 새 실행, 기존 ID 입력 시 상태 조회" style="max-width: 200px;">
-            <button id="load-id-btn" class="btn btn-primary" style="padding: 8px 15px;">조회</button>
+            <input type="text" id="exec-id-input" placeholder="비워두면 새 실행, 기존 ID 입력 시 상태 조회">
+            <button id="load-id-btn" class="btn btn-primary" style="padding: 8px 15px; width: 80px; flex-shrink: 0;">조회</button>
             <span id="status-badge" class="badge bg-gray">ANONYMOUS</span>
         </div>
 
