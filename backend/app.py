@@ -12,11 +12,45 @@ import os
 import uuid
 import shutil
 import shlex
+import asyncio # 추가됨
+from contextlib import asynccontextmanager # 추가됨
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="FEniCSx Async Executor")
+# --- 5일 지난 파일 자동 청소부 로직 ---
+async def cleanup_old_files_loop():
+    while True:
+        try:
+            now = time.time()
+            tmp_dir = Path("/tmp")
+            
+            # /tmp 폴더 안의 fenics_ 로 시작하는 폴더들을 전부 검사
+            for p in tmp_dir.glob("fenics_*"):
+                if p.is_dir():
+                    # 폴더가 생성(수정)된 시간 확인
+                    folder_age_seconds = now - p.stat().st_mtime
+                    # 5일(5일 * 24시간 * 60분 * 60초 = 432,000초)이 지났는지 확인
+                    if folder_age_seconds > (5 * 24 * 60 * 60):
+                        shutil.rmtree(p, ignore_errors=True)
+                        logger.info(f"🧹 5일 경과 폴더 삭제됨: {p.name}")
+                        
+        except Exception as e:
+            logger.error(f"청소부 에러: {e}")
+            
+        # 1시간(3600초) 동안 대기했다가 다시 검사
+        await asyncio.sleep(3600)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 서버 켜질 때 청소부 루프 백그라운드에서 실행 시작
+    cleanup_task = asyncio.create_task(cleanup_old_files_loop())
+    yield
+    # 서버 꺼질 때 청소부 루프 종료
+    cleanup_task.cancel()
+
+# lifespan을 app에 등록!
+app = FastAPI(title="FEniCSx Async Executor", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

@@ -42,6 +42,9 @@ idInput.addEventListener('input', () => {
 async function fetchStatus(execId) {
     try {
         const response = await fetch(`${API_URL}/api/status/${execId}`);
+        
+        // Hugging Face 휴면 상태 (503 에러) 감지
+        if (response.status === 503) throw new Error("WAKING_UP");
         if (!response.ok) throw new Error("ID를 찾을 수 없습니다.");
         
         const data = await response.json();
@@ -56,7 +59,12 @@ async function fetchStatus(execId) {
         }
     } catch (error) {
         clearInterval(pollInterval);
-        stdoutBox.textContent = error.message;
+        // HTML 반환(SyntaxError)이나 통신 불가(Failed to fetch) 상황도 휴면 기상으로 간주
+        if (error.message === "WAKING_UP" || error.name === "SyntaxError" || error.message.includes("Failed to fetch")) {
+            stdoutBox.textContent = "💤 서버가 절전 모드에서 깨어나는 중입니다. (약 1~3분 소요)\n잠시 후 다시 조회 버튼을 눌러주세요.";
+        } else {
+            stdoutBox.textContent = error.message;
+        }
         updateUI('ready');
     }
 }
@@ -83,7 +91,7 @@ runBtn.addEventListener('click', async () => {
     if (!code.trim()) return alert("코드를 입력해주세요.");
 
     updateUI('working');
-    stdoutBox.textContent = "요청을 서버로 전송했습니다...";
+    stdoutBox.textContent = "요청을 서버로 전송했습니다... (서버 상태 확인 중)";
     stderrBox.textContent = "";
 
     try {
@@ -92,6 +100,10 @@ runBtn.addEventListener('click', async () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ python_code: code, cli_args: cliArgs })
         });
+        
+        // Hugging Face 휴면 상태 감지
+        if (response.status === 503) throw new Error("WAKING_UP");
+        if (!response.ok) throw new Error(`서버 응답 오류 (상태 코드: ${response.status})`);
         
         const data = await response.json();
         currentExecId = data.execution_id;
@@ -102,7 +114,12 @@ runBtn.addEventListener('click', async () => {
         pollInterval = setInterval(() => fetchStatus(currentExecId), 3000);
 
     } catch (error) {
-        stderrBox.textContent = "실행 요청 실패: " + error.message;
+        // HTML 반환(SyntaxError)이나 통신 불가(Failed to fetch) 상황도 휴면 기상으로 간주
+        if (error.message === "WAKING_UP" || error.name === "SyntaxError" || error.message.includes("Failed to fetch")) {
+            stderrBox.textContent = "💤 서버가 절전 모드에서 깨어나는 중입니다. (약 1~3분 소요)\n잠시 후 다시 [▶️ 계산 실행] 버튼을 눌러주세요.";
+        } else {
+            stderrBox.textContent = "실행 요청 실패: " + error.message;
+        }
         updateUI('ready');
     }
 });
