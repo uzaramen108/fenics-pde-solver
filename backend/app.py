@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -12,46 +12,22 @@ import os
 import uuid
 import shutil
 import shlex
-import asyncio # 추가됨
-from contextlib import asynccontextmanager # 추가됨
+import threading
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# 로깅 설정
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-# --- 5일 지난 파일 자동 청소부 로직 ---
-async def cleanup_old_files_loop():
-    while True:
-        try:
-            now = time.time()
-            tmp_dir = Path("/tmp")
-            
-            # /tmp 폴더 안의 fenics_ 로 시작하는 폴더들을 전부 검사
-            for p in tmp_dir.glob("fenics_*"):
-                if p.is_dir():
-                    # 폴더가 생성(수정)된 시간 확인
-                    folder_age_seconds = now - p.stat().st_mtime
-                    # 5일(5일 * 24시간 * 60분 * 60초 = 432,000초)이 지났는지 확인
-                    if folder_age_seconds > (5 * 24 * 60 * 60):
-                        shutil.rmtree(p, ignore_errors=True)
-                        logger.info(f"🧹 5일 경과 폴더 삭제됨: {p.name}")
-                        
-        except Exception as e:
-            logger.error(f"청소부 에러: {e}")
-            
-        # 1시간(3600초) 동안 대기했다가 다시 검사
-        await asyncio.sleep(3600)
+app = FastAPI(
+    title="FEniCSx Dynamic Code Executor",
+    description="Execute user-generated FEniCSx Python code (Async version)",
+    version="2.1.0"
+)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 서버 켜질 때 청소부 루프 백그라운드에서 실행 시작
-    cleanup_task = asyncio.create_task(cleanup_old_files_loop())
-    yield
-    # 서버 꺼질 때 청소부 루프 종료
-    cleanup_task.cancel()
-
-# lifespan을 app에 등록!
-app = FastAPI(title="FEniCSx Async Executor", lifespan=lifespan)
-
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -60,18 +36,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 실행 중인 프로세스를 추적하기 위한 딕셔너리 (메모리)
+# 실행 중인 프로세스(강제 종료용) 추적 딕셔너리
 running_processes = {}
 
 class CodeExecutionRequest(BaseModel):
     python_code: str
-    cli_args: str = ""
+    execution_id: str = None
+    cli_args: str = ""  # CLI 인자 추가
 
+# --- 5일 지난 파일 자동 삭제 (서버 켜질 때 백그라운드 작동) ---
+def cleanup_old_folders_loop():
+    while True:
+        try:
+            now = time.time()
+            tmp_dir = Path("/tmp")
+            for p in tmp_dir.glob("fenics_*"):
+                if p.is_dir():
+                    # 5일(5 * 24 * 3600초 = 432000초) 경과 시 삭제
+                    if (now - p.stat().st_mtime) > 432000:
+                        shutil.rmtree(p, ignore_errors=True)
+                        logger.info(f"🧹 5일 경과 폴더 삭제됨: {p.name}")
+        except Exception as e:
+            logger.error(f"Cleanup error: {e}")
+        time.sleep(3600) # 1시간마다 검사
+
+@app.on_event("startup")
+def startup_event():
+    # FastAPI 시작 시 청소부 스레드 가동
+    threading.Thread(target=cleanup_old_folders_loop, daemon=True).start()
+    logger.info("🧹 Background cleanup thread started.")
+
+# --- 상태 관리 유틸리티 ---
 def get_work_dir(exec_id: str) -> Path:
     return Path(f"/tmp/fenics_{exec_id}")
 
 def update_status(exec_id: str, status_data: dict):
-    """상태를 JSON 파일로 저장하여 창을 껐다 켜도 유지되게 함"""
     status_file = get_work_dir(exec_id) / "status.json"
     with open(status_file, "w", encoding="utf-8") as f:
         json.dump(status_data, f, ensure_ascii=False)
@@ -83,15 +82,19 @@ def read_status(exec_id: str) -> dict:
             return json.load(f)
     return None
 
-def run_fenics_task(exec_id: str, code_file: Path, work_dir: Path, cli_args: str):
-    """백그라운드에서 실행되는 실제 연산 함수"""
+# --- [중요] Hugging Face 기상 확인용 엔드포인트 (절대 삭제 금지) ---
+@app.get("/")
+async def root():
+    return {"message": "FEniCSx Async Executor is running", "status": "healthy"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "fenics-executor"}
+
+# --- 실제 백그라운드 연산 스레드 ---
+def run_fenics_task(exec_id: str, command: list, work_dir: Path):
     start_time = time.time()
-    command = ["python3", str(code_file)]
-    if cli_args:
-        command.extend(shlex.split(cli_args))
-    
     try:
-        # Popen을 사용하여 비동기 실행 및 프로세스 제어권 획득
         process = subprocess.Popen(
             command,
             cwd=work_dir,
@@ -102,92 +105,108 @@ def run_fenics_task(exec_id: str, code_file: Path, work_dir: Path, cli_args: str
         )
         running_processes[exec_id] = process
         
-        stdout, stderr = process.communicate()
-        returncode = process.returncode
+        stdout, stderr = process.communicate() # 연산이 끝날 때까지 여기서 대기
         
-        exec_time = f"{time.time() - start_time:.3f}s"
-        
-        if returncode == 0:
+        if process.returncode == 0:
             status = "done"
-        elif returncode == -9 or returncode == 137: # SIGKILL (강제 종료됨)
+        elif process.returncode in [-9, 137]: # 강제 종료(Kill)된 경우
             status = "stopped"
-            stderr = "사용자에 의해 실행이 강제 중지되었습니다.\n" + stderr
+            stderr = "사용자에 의해 강제 중지되었습니다.\n" + stderr
         else:
             status = "error"
-
+            
         update_status(exec_id, {
             "status": status,
-            "stdout": stdout[-3000:],
+            "stdout": stdout[-3000:], # 로그 텍스트 용량 제한
             "stderr": stderr[-3000:],
-            "execution_time": exec_time
+            "execution_time": f"{time.time() - start_time:.3f}s"
         })
-
     except Exception as e:
+        logger.error(f"Task error: {e}")
         update_status(exec_id, {"status": "error", "error": str(e)})
     finally:
-        # 실행 끝난 프로세스는 추적 목록에서 제거
         if exec_id in running_processes:
             del running_processes[exec_id]
 
+# --- 핵심 API 엔드포인트 ---
 @app.post("/api/execute")
-async def execute_code(request: CodeExecutionRequest, background_tasks: BackgroundTasks):
-    exec_id = str(uuid.uuid4())[:8]
-    work_dir = get_work_dir(exec_id)
+async def execute_code(request: CodeExecutionRequest):
+    """코드 실행 요청 (ID 발급 후 즉시 응답)"""
+    execution_id = request.execution_id or str(uuid.uuid4())[:8]
+    work_dir = get_work_dir(execution_id)
     work_dir.mkdir(exist_ok=True, parents=True)
     (work_dir / "results").mkdir(exist_ok=True)
     
     code_file = work_dir / "user_code.py"
     code_file.write_text(request.python_code, encoding='utf-8')
     
-    # 초기 상태 설정
-    update_status(exec_id, {"status": "working", "start_time": time.time()})
+    command = ["python3", str(code_file)]
+    if request.cli_args:
+        command.extend(shlex.split(request.cli_args))
     
-    # 백그라운드 작업 시작 (웹 응답은 즉시 반환)
-    background_tasks.add_task(run_fenics_task, exec_id, code_file, work_dir, request.cli_args)
+    # 초기 상태 기록
+    update_status(execution_id, {"status": "working", "start_time": time.time()})
     
-    return {"execution_id": exec_id, "status": "working", "message": "Execution started"}
+    # 백그라운드 스레드로 실행 넘김 (시간제한 없음)
+    threading.Thread(target=run_fenics_task, args=(execution_id, command, work_dir)).start()
+    
+    logger.info(f"🚀 Execution started in background for ID: {execution_id}")
+    return {"execution_id": execution_id, "status": "working"}
 
 @app.get("/api/status/{execution_id}")
 async def check_status(execution_id: str):
-    status_data = read_status(execution_id)
-    if not status_data:
-        raise HTTPException(status_code=404, detail="해당 ID의 실행 기록이 없습니다.")
-    return status_data
+    """현재 연산 진행 상태 및 로그 조회"""
+    data = read_status(execution_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="ID를 찾을 수 없습니다.")
+    return data
 
 @app.post("/api/stop/{execution_id}")
 async def stop_execution(execution_id: str):
+    """실행 중인 연산 강제 중지"""
     process = running_processes.get(execution_id)
     if process:
-        process.kill() # 프로세스 강제 종료
-        del running_processes[execution_id]
-        update_status(execution_id, {"status": "stopped", "message": "사용자에 의해 중지됨"})
-        return {"status": "stopped", "message": "실행이 중지되었습니다."}
-    else:
-        # 이미 끝났거나 없는 경우
-        return {"status": "error", "message": "현재 실행 중인 프로세스가 아닙니다."}
-
-def cleanup_job(exec_id: str):
-    """다운로드 후 폴더 삭제"""
-    shutil.rmtree(get_work_dir(exec_id), ignore_errors=True)
+        process.kill()
+        return {"status": "stopped", "message": "중지 명령 전송 완료"}
+    return {"status": "error", "message": "현재 실행 중이지 않거나 이미 종료되었습니다."}
 
 @app.get("/api/download/{execution_id}")
-async def download_results(execution_id: str, background_tasks: BackgroundTasks):
+async def download_results(execution_id: str):
+    """결과 다운로드 및 자동 폴더 삭제"""
     results_dir = get_work_dir(execution_id) / "results"
+    
     if not results_dir.exists():
-        raise HTTPException(status_code=404, detail="결과 폴더가 없습니다.")
+        raise HTTPException(status_code=404, detail="결과 폴더를 찾을 수 없습니다.")
     
     all_files = [f for f in results_dir.rglob('*') if f.is_file()]
-    zip_path = get_work_dir(execution_id) / f"results_{execution_id}.zip"
+    if not all_files:
+        raise HTTPException(status_code=404, detail="압축할 내용물이 없습니다.")
     
+    zip_path = Path(f"/tmp/results_{execution_id}.zip")
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for file_path in all_files:
             arcname = file_path.relative_to(results_dir)
             zipf.write(str(file_path), str(arcname))
-    
-    # 다운로드 완료 후 백그라운드에서 폴더 통째로 삭제 (서버 용량 관리)
-    background_tasks.add_task(cleanup_job, execution_id)
+            
+    # 다운로드 응답을 보낸 후 서버에서 파일을 삭제하기 위해 타이머 스레드 작동
+    def cleanup_after_download():
+        time.sleep(10) # 다운로드 완료될 때까지 10초 대기
+        shutil.rmtree(get_work_dir(execution_id), ignore_errors=True)
+        if zip_path.exists(): zip_path.unlink()
+        logger.info(f"🗑️ Downloaded files deleted for ID: {execution_id}")
+        
+    threading.Thread(target=cleanup_after_download).start()
     
     return FileResponse(zip_path, media_type='application/zip', filename=f'fenics_{execution_id}.zip')
 
-# --- (선택사항) 5일 지난 폴더 자동 정리 로직 ---
-# 실제 환경에서는 Linux crontab에 `find /tmp/fenics_* -mtime +5 -exec rm -rf {} +` 를 등록하는 것이 가장 깔끔합니다.
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error(f"❌ Global exception: {exc}", exc_info=True)
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+# --- 원본 포트 바인딩 구조 유지 ---
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 7860))
+    logger.info(f"🚀 Starting Async FEniCSx Code Executor on port {port}...")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="debug")
