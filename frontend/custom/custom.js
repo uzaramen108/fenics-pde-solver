@@ -43,25 +43,34 @@ async function fetchStatus(execId) {
     try {
         const response = await fetch(`${API_URL}/api/status/${execId}`);
         
-        // Hugging Face 휴면 상태 (503 에러) 감지
+        // 1. 상태 코드가 503이거나 통신 에러면 기상 중으로 간주
         if (response.status === 503) throw new Error("WAKING_UP");
-        if (!response.ok) throw new Error("ID를 찾을 수 없습니다.");
         
-        const data = await response.json();
+        // 2. 일단 텍스트로 응답을 받음
+        const text = await response.text();
+        let data;
+        try {
+            // 3. JSON 변환 시도
+            data = JSON.parse(text);
+        } catch (e) {
+            // JSON이 아니라면(Hugging Face HTML 안내 페이지 등) 기상 중으로 간주
+            throw new Error("WAKING_UP");
+        }
+
+        if (!response.ok) throw new Error(data.detail || "ID를 찾을 수 없습니다.");
+        
         stdoutBox.textContent = data.stdout || "출력 로그 대기 중...";
         stderrBox.textContent = data.stderr || "";
         
         updateUI(data.status);
 
-        // 계산이 끝났거나 멈추면 반복 조회 중단
         if (data.status === 'done' || data.status === 'error' || data.status === 'stopped') {
             clearInterval(pollInterval);
         }
     } catch (error) {
         clearInterval(pollInterval);
-        // HTML 반환(SyntaxError)이나 통신 불가(Failed to fetch) 상황도 휴면 기상으로 간주
-        if (error.message === "WAKING_UP" || error.name === "SyntaxError" || error.message.includes("Failed to fetch")) {
-            stdoutBox.textContent = "💤 서버가 절전 모드에서 깨어나는 중입니다. (약 1~3분 소요)\n잠시 후 다시 조회 버튼을 눌러주세요.";
+        if (error.message === "WAKING_UP" || error.message.includes("Failed to fetch")) {
+            stdoutBox.textContent = "💤 서버(Hugging Face)가 깨어나거나 빌드 중입니다.\n약 2~3분 뒤에 다시 조회 버튼을 눌러주세요.";
         } else {
             stdoutBox.textContent = error.message;
         }
@@ -101,22 +110,29 @@ runBtn.addEventListener('click', async () => {
             body: JSON.stringify({ python_code: code, cli_args: cliArgs })
         });
         
-        // Hugging Face 휴면 상태 감지
         if (response.status === 503) throw new Error("WAKING_UP");
-        if (!response.ok) throw new Error(`서버 응답 오류 (상태 코드: ${response.status})`);
         
-        const data = await response.json();
+        // 일단 텍스트로 응답을 받음
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            // HTML 등 엉뚱한 텍스트가 오면 허깅페이스 로딩 중으로 판단
+            throw new Error("WAKING_UP");
+        }
+        
+        if (!response.ok) throw new Error(data.detail || `서버 응답 오류 (상태 코드: ${response.status})`);
+        
         currentExecId = data.execution_id;
-        idInput.value = currentExecId; // 발급받은 ID를 창에 표시
+        idInput.value = currentExecId; 
         
         if(pollInterval) clearInterval(pollInterval);
-        // 서버가 실행을 시작했으므로, 3초마다 상태 조회 시작
         pollInterval = setInterval(() => fetchStatus(currentExecId), 3000);
 
     } catch (error) {
-        // HTML 반환(SyntaxError)이나 통신 불가(Failed to fetch) 상황도 휴면 기상으로 간주
-        if (error.message === "WAKING_UP" || error.name === "SyntaxError" || error.message.includes("Failed to fetch")) {
-            stderrBox.textContent = "💤 서버가 절전 모드에서 깨어나는 중입니다. (약 1~3분 소요)\n잠시 후 다시 [▶️ 계산 실행] 버튼을 눌러주세요.";
+        if (error.message === "WAKING_UP" || error.message.includes("Failed to fetch")) {
+            stderrBox.textContent = "💤 서버(Hugging Face)가 깨어나거나 빌드 중입니다.\n페이지를 나가지 마시고 약 2~3분 뒤에 다시 [▶️ 계산 실행]을 눌러주세요.";
         } else {
             stderrBox.textContent = "실행 요청 실패: " + error.message;
         }
