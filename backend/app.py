@@ -13,6 +13,7 @@ import uuid
 import shutil
 import shlex
 import threading
+from datetime import datetime
 
 # 로깅 설정
 logging.basicConfig(
@@ -137,6 +138,14 @@ async def execute_code(request: CodeExecutionRequest):
     work_dir.mkdir(exist_ok=True, parents=True)
     (work_dir / "results").mkdir(exist_ok=True)
     
+    # --- 추가된 부분: 백엔드 루트에 있는 generate_mesh.py를 작업 폴더로 복사 ---
+    mesh_script = Path("generate_mesh.py")
+    if mesh_script.exists():
+        shutil.copy(mesh_script, work_dir / "generate_mesh.py")
+    else:
+        logger.warning("generate_mesh.py 파일이 메인 디렉토리에 없습니다!")
+    # -------------------------------------------------------------------
+    
     code_file = work_dir / "user_code.py"
     code_file.write_text(request.python_code, encoding='utf-8')
     
@@ -147,7 +156,7 @@ async def execute_code(request: CodeExecutionRequest):
     # 초기 상태 기록
     update_status(execution_id, {"status": "working", "start_time": time.time()})
     
-    # 백그라운드 스레드로 실행 넘김 (시간제한 없음)
+    # 백그라운드 스레드로 실행 넘김
     threading.Thread(target=run_fenics_task, args=(execution_id, command, work_dir)).start()
     
     logger.info(f"🚀 Execution started in background for ID: {execution_id}")
@@ -172,43 +181,43 @@ async def stop_execution(execution_id: str):
 
 @app.get("/api/download/{execution_id}")
 async def download_results(execution_id: str):
-    """결과 다운로드 및 자동 폴더 삭제 (전체 작업 폴더 압축으로 개선)"""
+    """결과 다운로드 및 자동 폴더 삭제"""
     work_dir = get_work_dir(execution_id)
     
     if not work_dir.exists():
-        raise HTTPException(status_code=404, detail="작업 폴더를 찾을 수 없습니다. (이미 삭제되었거나 존재하지 않음)")
+        raise HTTPException(status_code=404, detail="작업 폴더를 찾을 수 없습니다.")
     
-    # 1. 다운로드 시점에 현재까지의 로그를 텍스트 파일로 저장하여 포함
     status_data = read_status(execution_id)
     if status_data:
         (work_dir / "stdout_log.txt").write_text(status_data.get("stdout", "No output"), encoding="utf-8")
         (work_dir / "stderr_log.txt").write_text(status_data.get("stderr", "No errors"), encoding="utf-8")
     
-    # 2. 특정 폴더(results)만 고집하지 않고, 작업 폴더 내부의 모든 결과 파일을 수집
-    # 단, 실행 코드 원본과 상태 정보 파일은 제외
     exclude_files = ["user_code.py", "status.json"]
     all_files = [f for f in work_dir.rglob('*') if f.is_file() and f.name not in exclude_files]
     
     if not all_files:
         raise HTTPException(status_code=404, detail="압축할 내용물이 없습니다.")
     
-    # 3. ZIP 파일 생성 (폴더 구조 유지)
-    zip_path = Path(f"/tmp/results_{execution_id}.zip")
+    # --- 변경된 부분: 오늘 날짜로 파일명 설정 ---
+    date_str = datetime.now().strftime("%Y%m%d%H%M")
+    zip_path = Path(f"/tmp/fwp_{date_str}.zip")
+    # ----------------------------------------
+
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for file_path in all_files:
             arcname = file_path.relative_to(work_dir)
             zipf.write(str(file_path), str(arcname))
             
-    # 4. 다운로드 전송 후 서버 용량 정리를 위한 삭제 스레드
     def cleanup_after_download():
-        time.sleep(15) # 다운로드 완료를 위한 충분한 대기 시간
+        time.sleep(15) 
         shutil.rmtree(work_dir, ignore_errors=True)
         if zip_path.exists(): zip_path.unlink()
         logger.info(f"🗑️ Downloaded files deleted for ID: {execution_id}")
         
     threading.Thread(target=cleanup_after_download).start()
     
-    return FileResponse(zip_path, media_type='application/zip', filename=f'fenics_{execution_id}.zip')
+    # --- 변경된 부분: 다운로드 파일명 적용 ---
+    return FileResponse(zip_path, media_type='application/zip', filename=f'fwp_{date_str}.zip')
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):

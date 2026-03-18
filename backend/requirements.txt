@@ -5,3 +5,5 @@ pydantic==2.5.0
 git+https://github.com/METHODS-Group/ProximalGalerkin.git
 netgen-mesher
 pandas
+scifem
+meshio
