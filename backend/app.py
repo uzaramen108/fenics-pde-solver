@@ -149,9 +149,18 @@ async def execute_code(request: CodeExecutionRequest):
     code_file = work_dir / "user_code.py"
     code_file.write_text(request.python_code, encoding='utf-8')
     
-    command = ["python3", str(code_file)]
-    if request.cli_args:
-        command.extend(shlex.split(request.cli_args))
+    # 🌟 FIX: CLI 인자에 mpirun이 포함되어 있으면 파이썬 명령어 맨 앞으로 뺌
+    if request.cli_args and request.cli_args.strip().startswith("mpirun"):
+        base_cmd = shlex.split(request.cli_args)
+        
+        # MPICH 환경이므로 쓸데없는 옵션 자동 추가 로직 삭제!
+        # 프론트엔드에서 넘어온 mpirun -np 4 명령어 그대로 조립
+        command = base_cmd + ["python3", str(code_file)]
+    else:
+        # 기존 단일 코어 실행 방식
+        command = ["python3", str(code_file)]
+        if request.cli_args:
+            command.extend(shlex.split(request.cli_args))
     
     # 초기 상태 기록
     update_status(execution_id, {"status": "working", "start_time": time.time()})
