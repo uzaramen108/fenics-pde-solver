@@ -1,6 +1,6 @@
 ---
 title: FEniCSx PDE Solver
-emoji: 🔬
+emoji: 🔬 
 colorFrom: purple
 colorTo: pink
 sdk: docker
