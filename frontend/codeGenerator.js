@@ -1,6 +1,6 @@
 // codeGenerator.js - FEniCSx v0.10.0 검증된 템플릿 기반
 
-class FEniCSCodeGenerator {
+class FEniCSCodeGenerator { 
     constructor() {
         this.version = '0.10.0';
     }
